@@ -66,8 +66,16 @@ class WebSocketConnection implements TransportConnection {
     ) {
       return;
     }
-    // Browsers only accept 1000 or 3000–4999 from applications.
-    const safeCode = code === 1000 || (code >= 3000 && code <= 4999) ? code : 1000;
-    this.socket.close(safeCode, reason.slice(0, 123));
+    this.socket.close(safeCloseCode(code), safeCloseReason(reason));
   }
+}
+
+/** Browsers only accept 1000 or 3000–4999 from applications. */
+export function safeCloseCode(code: number): number {
+  return code === 1000 || (code >= 3000 && code <= 4999) ? code : 1000;
+}
+
+/** Close reasons are limited to 123 bytes of UTF-8. */
+export function safeCloseReason(reason: string): string {
+  return reason.slice(0, 123);
 }

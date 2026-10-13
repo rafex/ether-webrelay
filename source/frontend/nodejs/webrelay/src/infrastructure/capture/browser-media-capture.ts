@@ -1,5 +1,6 @@
 import { RelayError, RelayErrorCode } from '../../domain/errors';
 import type { SourceSelection, VideoSettings } from '../../domain/relay-settings';
+import { toCaptureError } from '../devices/browser-media-devices';
 
 export interface CapturedMedia {
   readonly camera?: MediaStreamTrack;
@@ -115,15 +116,7 @@ export async function captureMedia(
     };
   } catch (error) {
     stopAll();
-    if (error instanceof RelayError) throw error;
-    const name = (error as DOMException).name;
-    const message =
-      name === 'NotAllowedError'
-        ? 'Se denegó el permiso de captura.'
-        : name === 'NotFoundError'
-          ? 'No se encontró una cámara o micrófono compatible.'
-          : `Falló la captura: ${(error as Error).message}`;
-    throw new RelayError(RelayErrorCode.CaptureDenied, message, { cause: error });
+    throw toCaptureError(error);
   }
 }
 
