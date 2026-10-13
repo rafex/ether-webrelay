@@ -1,0 +1,20 @@
+//- Labelled input; `attrs` are forwarded to the <input>.
+mixin field(id, label, type)
+  .field
+    label(for=id)= label
+    input(id=id name=id type=type || 'text')&attributes(attributes)
+    if block
+      small.hint
+        block
+
+mixin toggle(id, label, checked)
+  label.toggle(for=id)
+    input(id=id name=id type="checkbox" checked=checked)
+    span= label
+
+mixin select(id, label, options, selected)
+  .field
+    label(for=id)= label
+    select(id=id name=id)
+      each text, value in options
+        option(value=value selected=value === selected)= text

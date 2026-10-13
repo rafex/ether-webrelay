@@ -1,0 +1,14 @@
+section.panel.stage
+  .preview
+    video#preview(muted playsinline autoplay)
+    span#state-badge.badge(data-state="idle") inactivo
+  p#message.message(role="status" aria-live="polite")
+  dl#stats.stats
+    each label, key in {bitrate: 'Bitrate', videoFramesSent: 'Frames de video', audioFramesSent: 'Paquetes de audio', videoFramesDropped: 'Video descartado', keyframesSent: 'Keyframes', reconnects: 'Reconexiones', rttMs: 'RTT', bufferedBytes: 'Buffer WS'}
+      div
+        dt= label
+        dd(data-stat=key) –
+  .actions
+    button#record(type="button" disabled) Grabar local
+    button#export-ogv(type="button" disabled) Exportar OGV (ffmpeg.wasm)
+  progress#export-progress(max="1" value="0" hidden)
