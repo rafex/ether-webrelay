@@ -19,6 +19,9 @@ Navegador: Chromium 94+ (WebCodecs completo). Safari/Firefox recientes
 funcionan si exponen `VideoEncoder`, `AudioEncoder` y `AudioWorklet`; la app
 lo verifica al iniciar y explica qué falta.
 
+Guía operativa completa (puertos, contenedor, TLS, problemas comunes):
+[Levantar el frontend](running-frontend.md).
+
 ## Local
 
 ```bash

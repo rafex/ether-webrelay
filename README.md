@@ -63,6 +63,7 @@ spec-native/           contexto para agentes (SpecNative)
 ## Documentación
 
 - [Guía de inicio](docs/getting-started.md)
+- [Levantar el frontend](docs/running-frontend.md) — desarrollo, preview, contenedor y TLS
 - [Arquitectura](docs/architecture.md)
 - [Protocolo v1](docs/protocol.md) — para quien implemente el puente
 - Contexto del proyecto para agentes: [AGENTS.md](AGENTS.md) →

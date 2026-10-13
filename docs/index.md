@@ -14,6 +14,7 @@ que publica en **RTMPS** (YouTube, Twitch o servidor propio).
     Este repositorio contiene solo el webrelay (frontend). El puente es un
     sistema aparte; su contrato es el [protocolo v1](protocol.md).
 
-- [Guía de inicio](getting-started.md) — levantar en local o en contenedor.
+- [Guía de inicio](getting-started.md) — requisitos y primeros pasos.
+- [Levantar el frontend](running-frontend.md) — desarrollo, preview, contenedor, TLS y solución de problemas.
 - [Arquitectura](architecture.md) — hexágono, flujo de medios, estados.
 - [Protocolo v1](protocol.md) — formato de tramas, handshake, reconexión.
