@@ -36,7 +36,11 @@ export interface AppExtensions {
   readonly uploadBackground?: (file: File) => Promise<string>;
   readonly effectsStatus?: () => string;
   /** Local recording of the call; the returned toggle resolves to "recording now". */
-  readonly recorder?: (call: CallController, title: string) => () => Promise<boolean>;
+  readonly recorder?: (
+    call: CallController,
+    title: string,
+    selfName: string,
+  ) => () => Promise<boolean>;
 }
 
 type Identity = { name: string; title?: string };
@@ -130,7 +134,7 @@ export class WebRelayApp {
         : this.websocketCall(client, lobby, invite, identity, initial);
     this.call = call;
 
-    const recorder = this.extensions.recorder?.(call, title);
+    const recorder = this.extensions.recorder?.(call, title, identity.name);
     this.callView = new CallView(call, {
       roomTitle: title,
       identity,

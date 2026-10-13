@@ -906,6 +906,35 @@ video.mirror {
   color: var(--warn);
 }
 
+.recording-ready {
+  position: fixed;
+  right: 16px;
+  bottom: 100px;
+  z-index: 30;
+  width: min(380px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  box-shadow: var(--shadow);
+}
+
+.recording-ready p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.recording-ready .actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.button.ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--text);
+}
+
 /* ------------------------------------------------------------- settings */
 
 .settings {

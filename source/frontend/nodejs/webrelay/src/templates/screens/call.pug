@@ -49,4 +49,15 @@ section#call.screen.call(data-screen="call" data-view="stage" hidden)
     button#call-leave.control.danger(type="button" title="Salir")
       +icon('leave')
       span.control-label Salir
+  aside#recording-ready.recording-ready(hidden aria-label="Grabación")
+    p#recording-status(role="status")
+    .actions
+      button#recording-webm.button.primary(type="button")
+        +icon('download')
+        span Descargar WebM
+      button#recording-ogv.button.ghost(type="button")
+        +icon('download')
+        span Exportar OGV
+      button#recording-close.icon-button(type="button" aria-label="Cerrar")
+        +icon('x')
   .toast-region#toasts(role="status" aria-live="polite")
