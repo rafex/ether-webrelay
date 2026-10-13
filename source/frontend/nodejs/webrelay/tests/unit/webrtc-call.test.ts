@@ -119,7 +119,9 @@ describe('WebRtcCallSession — joining', () => {
       maxFramerate: 30,
       scaleResolutionDownBy: 1.5,
     });
-    expect(h.conn().ofType('publish.offer')).toEqual([{ type: 'publish.offer', sdp: 'offer-1' }]);
+    expect(h.conn().ofType('publish.offer')).toEqual([
+      { type: 'publish.offer', sdp: 'offer-1', sources: { '0': 'camera', '1': 'microphone' } },
+    ]);
     expect(h.conn().ofType('self.update').at(-1)).toEqual({
       type: 'self.update',
       muted: false,
@@ -206,10 +208,11 @@ describe('WebRtcCallSession — in-call controls', () => {
     expect(h.call.snapshot.self.cameraOff).toBe(false);
   });
 
-  it('adds a sender and renegotiates when enabling media joined without', async () => {
+  it('joins to watch without media, then publishes when a device is enabled', async () => {
     const h = await joined({ camera: false, microphone: false });
     expect(h.conn().ofType('join')[0]?.media).toEqual({ audio: false, video: false });
     expect(h.peers.publish.senders).toHaveLength(0);
+    expect(h.peers.publish.offers).toEqual([]); // no empty offer
     await h.call.setCameraEnabled(true);
     await h.call.setMicrophoneEnabled(true);
     // The second request waits for the first offer's answer, then collapses into one.
@@ -232,6 +235,12 @@ describe('WebRtcCallSession — in-call controls', () => {
       scaleResolutionDownBy: 2,
     });
     expect(screenAudioSender?.track?.kind).toBe('audio');
+    expect(h.conn().ofType('publish.offer').at(-1)?.sources).toEqual({
+      '0': 'camera',
+      '1': 'microphone',
+      '2': 'screen',
+      '3': 'screen-audio',
+    });
     expect(h.call.snapshot.self.screenSharing).toBe(true);
     expect(h.conn().ofType('self.update').at(-1)).toMatchObject({ screenSharing: true });
     await h.call.startScreenShare(); // idempotent

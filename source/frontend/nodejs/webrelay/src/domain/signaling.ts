@@ -77,7 +77,12 @@ export type ClientMessage =
       /** Previous participant id when rejoining after a dropped socket. */
       readonly resume?: string;
     }
-  | { readonly type: 'publish.offer'; readonly sdp: string }
+  | {
+      readonly type: 'publish.offer';
+      readonly sdp: string;
+      /** Which local source each published transceiver carries, by mid. */
+      readonly sources: Readonly<Record<string, MediaSource>>;
+    }
   | { readonly type: 'subscribe.answer'; readonly sdp: string }
   | { readonly type: 'ice'; readonly pc: PeerRole; readonly candidate: IceCandidateData }
   | ({ readonly type: 'self.update' } & SelfState)

@@ -23,6 +23,8 @@ export interface PeerHandlers {
 }
 
 export interface PeerSender {
+  /** Transceiver mid, known once the offer has been created. */
+  readonly mid: string | null;
   replaceTrack(track: MediaTrackLike | null): Promise<void>;
   setEncoding(encoding: SendEncoding): Promise<void>;
 }

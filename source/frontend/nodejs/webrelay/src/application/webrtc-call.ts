@@ -11,6 +11,7 @@ import { EMPTY_ROOM, type RoomState, reduceRoom } from '../domain/room';
 import type {
   IceCandidateData,
   IceServerConfig,
+  MediaSource,
   PeerRole,
   SelfState,
   ServerMessage,
@@ -48,6 +49,13 @@ export interface WebRtcCallDeps {
 }
 
 type LocalSlot = 'camera' | 'microphone' | 'screen' | 'screenAudio';
+
+const SLOT_SOURCES: Record<LocalSlot, MediaSource> = {
+  camera: 'camera',
+  microphone: 'microphone',
+  screen: 'screen',
+  screenAudio: 'screen-audio',
+};
 
 /**
  * WebRTC call against the bridge's SFU, negotiated over signaling v2:
@@ -324,16 +332,28 @@ export class WebRtcCallSession implements CallController {
     return this.subscribePc;
   }
 
-  /** Serialized publish negotiation: overlapping requests collapse into one follow-up. */
+  /**
+   * Serialized publish negotiation: overlapping requests collapse into one follow-up.
+   * Nothing is offered until there is at least one track (an offer without media
+   * sections is invalid with max-bundle); a participant may join just to watch.
+   */
   private async negotiate(options: { iceRestart?: boolean } = {}): Promise<void> {
-    if (!this.publishPc) return;
+    if (!this.publishPc || Object.keys(this.senders).length === 0) return;
     if (this.negotiating) {
       this.renegotiate = true;
       return;
     }
     this.negotiating = true;
     const sdp = await this.publishPc.createOffer(options);
-    this.deps.client.send({ type: 'publish.offer', sdp });
+    this.deps.client.send({ type: 'publish.offer', sdp, sources: this.publishedSources() });
+  }
+
+  private publishedSources(): Record<string, MediaSource> {
+    const sources: Record<string, MediaSource> = {};
+    for (const [slot, sender] of Object.entries(this.senders) as [LocalSlot, PeerSender][]) {
+      if (sender.mid !== null) sources[sender.mid] = SLOT_SOURCES[slot];
+    }
+    return sources;
   }
 
   private async addIce(role: PeerRole, candidate: IceCandidateData): Promise<void> {

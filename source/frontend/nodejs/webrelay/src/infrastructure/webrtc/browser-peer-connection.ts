@@ -48,7 +48,7 @@ class BrowserPeerConnection implements PeerConnectionLike {
       direction: 'sendonly',
       ...(encoding ? { sendEncodings: [{ ...encoding }] } : {}),
     });
-    return new BrowserSender(transceiver.sender);
+    return new BrowserSender(transceiver);
   }
 
   async createOffer(options?: { readonly iceRestart?: boolean }): Promise<string> {
@@ -87,7 +87,15 @@ class BrowserPeerConnection implements PeerConnectionLike {
 }
 
 class BrowserSender implements PeerSender {
-  constructor(private readonly sender: RTCRtpSender) {}
+  private readonly sender: RTCRtpSender;
+
+  constructor(private readonly transceiver: RTCRtpTransceiver) {
+    this.sender = transceiver.sender;
+  }
+
+  get mid(): string | null {
+    return this.transceiver.mid;
+  }
 
   async replaceTrack(track: MediaTrackLike | null): Promise<void> {
     await this.sender.replaceTrack(track as MediaStreamTrack | null);

@@ -139,6 +139,7 @@ export class FakeSignaling implements SignalingPort {
 // ----------------------------------------------------------------- WebRTC
 
 export class FakeSender implements PeerSender {
+  mid: string | null = null;
   readonly replaced: (MediaTrackLike | null)[] = [];
   readonly encodings: SendEncoding[] = [];
 
@@ -179,6 +180,8 @@ export class FakePeer implements PeerConnectionLike {
   }
 
   async createOffer(options?: { iceRestart?: boolean }): Promise<string> {
+    // Like a browser, mids are assigned when the offer is created.
+    for (const [index, sender] of this.senders.entries()) sender.mid ??= String(index);
     const sdp = `offer-${this.offers.length + 1}${options?.iceRestart ? '-restart' : ''}`;
     this.offers.push(sdp);
     return sdp;
