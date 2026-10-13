@@ -1,0 +1,16 @@
+//- Cloned by the UI at runtime.
+template#tpl-tile
+  article.tile
+    video(playsinline autoplay muted)
+    .tile-off
+      span.avatar.large
+    .tile-label
+      +icon('mic-off')(class="tile-muted")
+      +icon('screen')(class="tile-sharing")
+      span.tile-name
+      span.tile-title
+
+template#tpl-toast
+  .toast
+    +icon('alert')
+    span.toast-text

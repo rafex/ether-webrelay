@@ -109,20 +109,6 @@ describe('settings validation', () => {
     expect(validateBridgeUrl(url) === undefined).toBe(ok);
   });
 
-  it('requires an rtmps:// destination with a stream key when one is given', () => {
-    const result = validateSettings({
-      ...valid,
-      destination: { url: 'rtmp://insecure.example.com/live', streamKey: ' ' },
-    });
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.issues.map((i) => i.field)).toEqual([
-        'destination.url',
-        'destination.streamKey',
-      ]);
-    }
-  });
-
   it('reports every invalid field', () => {
     const result = validateSettings({
       ...valid,

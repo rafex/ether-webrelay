@@ -19,15 +19,19 @@
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "lint": "biome check .",
-    "format": "biome format --write ."
+    "format": "biome format --write .",
+    "bridge:dev": "node tests/support/dev-bridge.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@ffmpeg/core": "0.12.10",
     "@ffmpeg/ffmpeg": "0.12.15",
-    "@ffmpeg/util": "0.12.2"
+    "@ffmpeg/util": "0.12.2",
+    "@mediapipe/tasks-vision": "1.0.1"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
+    "@playwright/test": "1.62.1",
     "@types/node": "26.6.5",
     "@types/pug": "2.0.10",
     "@types/ws": "8.18.2",
@@ -36,6 +40,7 @@
     "typescript": "7.0.2",
     "vite": "8.3.4",
     "vitest": "5.0.4",
+    "werift": "0.24.4",
     "ws": "8.22.0"
   }
 }

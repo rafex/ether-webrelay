@@ -1,0 +1,20 @@
+//- Loading, invalid link and "you left" screens.
+section.screen.status-screen(data-screen="loading")
+  .spinner(aria-hidden="true")
+  p Preparando la sala…
+
+section.screen.status-screen(data-screen="invalid" hidden)
+  .status-card
+    +icon('link-off')(class="status-icon")
+    h1 Enlace no válido
+    p#invalid-message Pide al anfitrión un enlace de invitación.
+
+section.screen.status-screen(data-screen="left" hidden)
+  .status-card
+    +icon('check')(class="status-icon ok")
+    h1 Has salido de la sala
+    p#left-message Gracias por participar.
+    .actions
+      button#rejoin.button.primary(type="button")
+        +icon('refresh')
+        span Volver a entrar

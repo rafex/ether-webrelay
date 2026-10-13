@@ -10,31 +10,29 @@ antes de implementar.
 
 ## Ahora
 
-- **webrelay-mvp** (`SPEC-0001`): captura combinada, WebCodecs, protocolo v1,
-  reconexión, UI Pug, contenedor y CI. Implementado; pendiente la
-  verificación contra un puente real (TASK-0011) antes de cerrarla.
+- **webrtc-lobby** (`SPEC-0002`): antesala, videollamada WebRTC, ajustes,
+  efectos, grabación local, despliegue con config en runtime y E2E.
+  Implementado; falta la prueba contra el puente real.
+- **Interoperabilidad con `ether-streaming-culerin`**: implementar allí la
+  señalización v2 (`docs/signaling.md`) y verificar con el E2E apuntando al
+  puente real (TASK-0011 de SPEC-0001, ahora sobre la señalización v2).
 
 ## Después
 
-- **Interoperabilidad con el puente**: prueba conjunta con la implementación
-  real del puente (remux FLV, reanudación con periodo de gracia).
-- **E2E en navegador**: Playwright/Vitest browser mode con dispositivos
-  falsos de Chromium (`--use-fake-device-for-media-stream`) para cubrir
-  captura, compositor y encoders en CI.
-- **Codificación en Worker**: mover compositor + encoders a un Worker
-  (`OffscreenCanvas`, `MediaStreamTrackProcessor` donde exista) para
-  aislar el hilo de UI.
+- Codificación/efectos en Worker (`OffscreenCanvas`, `MediaStreamTrackProcessor`)
+  para descargar el hilo de UI.
+- Simulcast en la publicación para que el SFU adapte calidad por espectador.
+- Indicador de quién habla (niveles de audio remotos) y fijar participante.
+- Autoalojar el modelo de efectos en la imagen por defecto.
 
 ## Más adelante
 
-- Bitrate adaptativo a partir de `bufferedAmount` y RTT.
-- Layouts adicionales (lado a lado, solo pantalla con avatar) y controles de
-  ganancia por fuente en la UI.
-- Empaquetar el webrelay como librería/Web Component embebible en otros
-  portales.
+- Controles de anfitrión en un frontend aparte (salir al aire, layouts).
+- Chat y reacciones por la señalización.
+- Empaquetar la antesala como Web Component embebible.
 
 ## No hacer por ahora
 
-- Servidor puente en este repositorio (ver DEC-0001).
-- WebRTC/WHIP como transporte alternativo.
-- Soporte de navegadores sin WebCodecs.
+- Servidor puente en este repositorio (DEC-0001; vive en `ether-streaming-culerin`).
+- Que el cliente conozca destinos o claves RTMPS (DEC-0010).
+- SDKs propietarios de SFU en el cliente (DEC-0009).

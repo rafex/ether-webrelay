@@ -4,51 +4,50 @@ Fuente de verdad del producto.
 
 ## Problema
 
-Transmitir en vivo (YouTube, Twitch o un servidor propio) exige hoy instalar
-software de escritorio (OBS y similares) o depender de estudios web cerrados.
-Los portales web que quieren que sus usuarios transmitan cámara + pantalla no
-tienen una pieza de navegador reutilizable que capture, codifique con
-hardware y entregue un stream sincronizado a su propia infraestructura RTMPS.
+Invitar a personas a una transmisión en vivo (podcast, panel, clase) exige
+hoy software de escritorio o estudios web cerrados. Los organizadores que
+tienen su propia infraestructura de streaming no disponen de una antesala y
+videollamada de navegador, simple para el invitado, que entregue los medios a
+su propio puente para publicarlos en sus canales.
 
 ## Usuarios
 
-- **Equipos que integran un portal web** (educación, eventos, soporte):
-  necesitan embeber "transmitir desde el navegador" sin instalar nada ni
-  ceder el stream a terceros.
-- **Personas que transmiten** desde ese portal: quieren elegir cámara,
-  micrófono, pestaña/ventana/pantalla y audio del sistema, y que la
-  transmisión aguante cortes breves de red.
-- **Equipo del puente** (servidor externo): necesita un contrato estable y
-  documentado para recibir los medios y publicarlos en RTMPS.
+- **Invitados**: abren un enlace, prueban cámara, micrófono y efectos, entran
+  y conversan viendo a los demás; no deben configurar nada técnico ni ver
+  conceptos como RTMPS o bitrate.
+- **Anfitrión / producción**: controla desde el puente (u otra consola) quién
+  sale al aire y la composición final; reparte enlaces de invitación.
+- **Equipo del puente** (`ether-streaming-culerin`): necesita un contrato
+  estable y probado (señalización v2) para implementar SFU, composición y
+  publicación RTMPS.
 
 ## Objetivos
 
-- Capturar cámara, micrófono, pantalla y audio del sistema/pestaña con el
-  selector nativo del navegador.
-- Codificar en el navegador con WebCodecs (aceleración por hardware cuando
-  exista) en H.264/AAC, remuxables a FLV sin transcodificar.
-- Entregar por `wss://` un flujo con marcas de tiempo compartidas, resistente
-  a reconexiones y con contrapresión.
-- Publicar un contrato de protocolo versionado y probado para el puente.
+- Entrada por enlace de invitación con lobby: info de la sala, vista previa,
+  dispositivos, efectos de fondo, nombre y título.
+- Videollamada multi-participante por WebRTC con tres vistas (escenario,
+  mínima, estadísticas), pantalla compartida en caliente y reconexión
+  transparente.
+- Calidad dictada por el puente; el invitado solo elige la resolución de su
+  cámara.
+- Un modo alternativo "solo emisor" (WebSocket + WebCodecs) para puentes sin
+  SFU.
 
 ### Métricas de éxito
 
-- Latencia de captura a socket < 300 ms a 720p30 en hardware común.
-- Reconexión transparente: una caída < 10 s no termina la transmisión y el
-  primer frame tras reconectar es un keyframe.
-- 0 frames corruptos bajo congestión (solo descartes marcados).
-- Cobertura ≥ 80 % en dominio, aplicación y transporte; CI en contenedor verde.
+- Del enlace a "En la sala" en menos de 10 s con dispositivos permitidos.
+- Dos invitados se ven y se oyen (verificado por E2E en cada cambio).
+- Una caída de red breve no saca al invitado de la sala.
+- Cobertura ≥ 80 % en dominio, aplicación y transporte; CI y E2E verdes.
 
 ## No objetivos
 
-- Implementar el servidor puente o publicar RTMPS desde este repositorio.
-- Edición, escenas complejas o efectos tipo OBS (solo pantalla + cámara PiP).
-- Grabación en la nube, chat, multi-invitado o WebRTC.
-- Soportar navegadores sin WebCodecs.
+- Publicar RTMPS, componer la salida o grabar en servidor (lo hace el puente).
+- Controles de anfitrión (salir al aire, expulsar, layouts de emisión).
+- Chat, reacciones o compartir archivos en esta etapa.
 
 ## Valor diferencial
 
-Una pieza pequeña, documentada y probada que convierte cualquier portal web
-en un emisor en vivo: la codificación ocurre en el cliente (sin costo de CPU
-en servidor), el puente solo remuxea, y el protocolo explícito permite
-implementar el puente en cualquier lenguaje.
+Una antesala y videollamada de navegador, documentada y probada de extremo a
+extremo, que deja la publicación en manos de la infraestructura del
+organizador gracias a un contrato de señalización abierto y agnóstico del SFU.

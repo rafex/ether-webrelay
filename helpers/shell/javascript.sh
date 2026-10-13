@@ -12,7 +12,7 @@ source "$SCRIPT_DIR/lib/messages.sh"
 #   --tool npm|pnpm                     Gestor de paquetes (default: npm)
 #   --goal <goal>                       install | build | typecheck | test |
 #                                       test-unit | test-integration | coverage |
-#                                       lint | format | dev | preview
+#                                       lint | format | e2e | dev | preview | bridge-dev
 #   --module source/frontend/nodejs/webrelay   Proyecto (default: .)
 #   --port 5173                         Puerto (dev/preview)
 #   --host localhost                    Host (dev/preview)
@@ -64,6 +64,12 @@ fi
 init_log "javascript"
 log_info "Tool: $tool | Goal: ${goal:-<command>} | Module: $module"
 
+default_channel() {
+	if [[ -d "/Applications/Google Chrome.app" ]] || command -v google-chrome >/dev/null 2>&1; then
+		echo chrome
+	fi
+}
+
 resolve_cmd() {
 	local run
 	case "$tool" in
@@ -78,8 +84,12 @@ resolve_cmd() {
 		build|typecheck|lint|format|coverage|test-unit|test-integration)
 			echo "$run $goal" ;;
 		test)    echo "$run test" ;;
+		# E2E local: Chrome instalado si existe, si no el Chromium de Playwright.
+		e2e)     echo "PW_CHANNEL=${PW_CHANNEL:-$(default_channel)} $run test:e2e" ;;
 		dev)     echo "$run dev -- --host $host --port $port" ;;
 		preview) echo "$run preview -- --host $host --port $port" ;;
+		# Puente de desarrollo (doble de prueba, no publica RTMPS).
+		bridge-dev) echo "$run bridge:dev -- --port ${port}" ;;
 		*)       echo "" ;;
 	esac
 }

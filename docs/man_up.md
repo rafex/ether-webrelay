@@ -7,19 +7,20 @@ up — levanta el frontend en un contenedor
 ## Sinopsis
 
 ```
-just up [--port 8080] [--man]
+just up [--port 8080] [--bridge-url URL] [--relay-url URL] [--transport webrtc|websocket] [--view stage|minimal|stats] [--effects-model-url URL] [--man]
 make man TARGET=up
 ```
 
 ## Descripción
 
-Construye la imagen servible (`containers/frontend/Containerfile`) y la ejecuta con el runtime detectado (podman → docker), publicada solo en `127.0.0.1:<port>`. Abre `http://localhost:<port>`. Para exponerla fuera de localhost hace falta terminar TLS delante (proxy/ingress): los navegadores solo permiten capturar medios en contextos seguros.
+Construye la imagen servible (`containers/frontend/Containerfile`) y la ejecuta con el runtime detectado (podman → docker), publicada solo en `127.0.0.1:<port>`. Abre `http://localhost:<port>/join/<sala>?t=<token>`. Las opciones `--bridge-url`, `--relay-url`, `--transport`, `--view` y `--effects-model-url` se pasan como variables `WEBRELAY_*` y el contenedor genera `config.json` al arrancar. Para exponerla fuera de localhost hace falta terminar TLS delante (proxy/ingress): los navegadores solo permiten capturar medios en contextos seguros.
 
 ## Ejemplos
 
 ```bash
 just up
 just up --port 8091
+just up --bridge-url wss://puente.example.com/signal --view stats
 just down
 ```
 

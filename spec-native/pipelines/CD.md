@@ -29,7 +29,7 @@ Entrega continua del proyecto.
 
 - `make ci` verde en el commit etiquetado.
 - Prueba manual contra un puente del ambiente (captura → RTMPS visible).
-- `docs/protocol.md` sin cambios incompatibles no coordinados con el puente.
+- `docs/protocol-websocket.md` sin cambios incompatibles no coordinados con el puente.
 
 ## Rollback
 

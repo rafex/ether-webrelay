@@ -1,0 +1,54 @@
+section.screen.lobby(data-screen="lobby" hidden)
+  .lobby-info
+    .host
+      span#host-avatar.avatar(aria-hidden="true")
+      p
+        strong#host-name
+        |  te invitó a unirte
+    h1#room-title Conectando con la sala…
+    .channels#channels(hidden)
+      span Se transmite en
+      ul#channel-list
+
+  .lobby-card(role="region" aria-labelledby="lobby-heading")
+    h2#lobby-heading ¿Listo para entrar?
+    .preview
+      video#lobby-preview(muted playsinline autoplay)
+      .preview-off#lobby-preview-off(hidden)
+        span#lobby-initials.avatar.large ?
+        p La cámara está apagada
+      button#lobby-effects.icon-button.overlay(type="button" aria-label="Efectos y fondo" title="Efectos y fondo")
+        +icon('sparkles')
+      .level-meter(aria-hidden="true")
+        span#lobby-level
+    p#lobby-media-error.notice.error(role="alert" hidden)
+
+    .device-controls
+      .split-button
+        button#lobby-mic.toggle(type="button" aria-pressed="true" aria-label="Micrófono" title="Micrófono (M)")
+          +icon('mic')(class="when-on")
+          +icon('mic-off')(class="when-off")
+        button.menu-button(type="button" data-device-menu="audioinput" aria-label="Elegir micrófono" aria-haspopup="menu")
+          +icon('chevron-down')
+      .split-button
+        button#lobby-cam.toggle(type="button" aria-pressed="true" aria-label="Cámara" title="Cámara (V)")
+          +icon('video')(class="when-on")
+          +icon('video-off')(class="when-off")
+        button.menu-button(type="button" data-device-menu="videoinput" aria-label="Elegir cámara" aria-haspopup="menu")
+          +icon('chevron-down')
+      button#lobby-settings.icon-button.round(type="button" aria-label="Ajustes" title="Ajustes (,)")
+        +icon('settings')
+
+    form#join-form(novalidate autocomplete="off")
+      .identity
+        .field
+          label(for="join-name") Tu nombre
+          input#join-name(name="name" type="text" placeholder="p. ej. Ada Lovelace" maxlength="60" required)
+        .field
+          label(for="join-title")
+            | Título
+            span.optional  (opcional)
+          input#join-title(name="title" type="text" placeholder="p. ej. Invitada" maxlength="80")
+      p#join-error.notice.error(role="alert" hidden)
+      button#join-button.button.primary.wide(type="submit" disabled) Entrar como invitado
+      p#lobby-status.status-line(role="status" aria-live="polite") Conectando…

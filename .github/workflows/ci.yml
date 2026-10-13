@@ -21,11 +21,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build CI image
-        run: make image
-
       - name: Install, lint, build and test in container
         run: make ci
 
       - name: Build serving image
         run: make app-image
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Browser E2E (Playwright + dev bridge) in container
+        run: make e2e-ci

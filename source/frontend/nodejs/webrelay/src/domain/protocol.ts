@@ -18,7 +18,7 @@
  * | 28     | n    | payload      | codec bytes, or UTF-8 JSON for control frames |
  *
  * All integers are big-endian. Bridge → client traffic is UTF-8 JSON text
- * messages, see {@link BridgeMessage}. Full contract: docs/protocol.md.
+ * messages, see {@link BridgeMessage}. Full contract: docs/protocol-websocket.md.
  */
 import { ProtocolError } from './errors';
 
@@ -139,12 +139,6 @@ function assertU32(field: string, value: number): void {
 // Control payloads (JSON inside binary frames)
 // ---------------------------------------------------------------------------
 
-export interface RtmpsDestination {
-  /** Full ingest URL, e.g. `rtmps://a.rtmps.youtube.com/live2`. */
-  readonly url: string;
-  readonly streamKey: string;
-}
-
 export interface HelloPayload {
   readonly protocol: typeof PROTOCOL_NAME;
   readonly version: typeof PROTOCOL_VERSION;
@@ -152,9 +146,12 @@ export interface HelloPayload {
   readonly streamId: string;
   /** True when this connection continues a stream the bridge may still hold open. */
   readonly resume: boolean;
+  /** Invitation room and token: the bridge maps them to its RTMPS destinations. */
+  readonly room?: string;
   readonly token?: string;
-  /** Optional: bridges may instead map `streamId`/`token` to a server-side destination. */
-  readonly destination?: RtmpsDestination;
+  /** Participant identity for on-air labels. */
+  readonly name?: string;
+  readonly title?: string;
   readonly tracks: readonly ('video' | 'audio')[];
   readonly userAgent?: string;
 }

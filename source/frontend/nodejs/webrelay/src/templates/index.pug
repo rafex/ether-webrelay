@@ -1,11 +1,9 @@
 extends layouts/base.pug
+include mixins/icons.pug
 
 block content
-  header.app-header
-    h1 Ether WebRelay
-    p.subtitle
-      | Captura cámara, micrófono y pantalla, codifica con WebCodecs y transmite al puente RTMPS por WebSocket.
-    p.meta v#{appVersion} · protocolo v#{protocolVersion}
-  main.layout
-    include partials/settings.pug
-    include partials/stage.pug
+  include screens/status.pug
+  include screens/lobby.pug
+  include screens/call.pug
+  include partials/settings-dialog.pug
+  include partials/templates.pug

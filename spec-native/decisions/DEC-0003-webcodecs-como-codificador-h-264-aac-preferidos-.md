@@ -25,3 +25,7 @@ VideoEncoder/AudioEncoder con latencyMode realtime y prefer-hardware. Preferenci
 ## Consecuencias
 
 El bundle principal no incluye los 32 MB de ffmpeg-core.wasm. Navegadores sin WebCodecs no son soportados (se informa al iniciar).
+
+## Alcance actualizado (2026-10-13)
+
+Desde DEC-0012 esta decisión aplica solo al transporte alternativo `websocket` ("solo emisor"). El transporte principal es WebRTC (DEC-0009).

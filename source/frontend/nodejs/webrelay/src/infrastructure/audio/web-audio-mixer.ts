@@ -2,8 +2,15 @@ import type { PcmChunkMessage } from './pcm-tap.worklet';
 import pcmTapUrl from './pcm-tap.worklet.ts?worker&url';
 
 export interface MixerInput {
-  readonly id: 'microphone' | 'systemAudio';
+  /** Stable key: 'microphone', 'screenAudio', or a remote participant id. */
+  readonly id: string;
   readonly track: MediaStreamTrack;
+}
+
+interface MixerNode {
+  readonly track: MediaStreamTrack;
+  readonly source: MediaStreamAudioSourceNode;
+  readonly gain: GainNode;
 }
 
 /**
@@ -12,7 +19,7 @@ export interface MixerInput {
  * Also exposes the mix as a MediaStream for preview/recording.
  */
 export class WebAudioMixer {
-  private readonly gains = new Map<MixerInput['id'], GainNode>();
+  private readonly nodes = new Map<string, MixerNode>();
 
   private constructor(
     private readonly context: AudioContext,
@@ -73,14 +80,7 @@ export class WebAudioMixer {
 
       const destination = context.createMediaStreamDestination();
       const mixer = new WebAudioMixer(context, tap, destination);
-      for (const input of inputs) {
-        const source = context.createMediaStreamSource(new MediaStream([input.track]));
-        const gain = context.createGain();
-        source.connect(gain);
-        gain.connect(tap);
-        gain.connect(destination);
-        mixer.gains.set(input.id, gain);
-      }
+      mixer.setInputs(inputs);
       await context.resume();
       return mixer;
     } catch (error) {
@@ -97,9 +97,28 @@ export class WebAudioMixer {
     return this.destination.stream;
   }
 
-  setGain(id: MixerInput['id'], value: number): void {
-    const gain = this.gains.get(id);
-    if (gain) gain.gain.setTargetAtTime(value, this.context.currentTime, 0.02);
+  /** Reconciles the mix with `inputs`: new tracks are connected, missing ones removed. */
+  setInputs(inputs: readonly MixerInput[]): void {
+    const wanted = new Map(inputs.map((input) => [input.id, input.track]));
+    for (const [id, node] of this.nodes) {
+      if (wanted.get(id) === node.track) continue;
+      node.source.disconnect();
+      node.gain.disconnect();
+      this.nodes.delete(id);
+    }
+    for (const [id, track] of wanted) {
+      if (this.nodes.has(id)) continue;
+      const source = this.context.createMediaStreamSource(new MediaStream([track]));
+      const gain = this.context.createGain();
+      source.connect(gain);
+      gain.connect(this.tap);
+      gain.connect(this.destination);
+      this.nodes.set(id, { track, source, gain });
+    }
+  }
+
+  setGain(id: string, value: number): void {
+    this.nodes.get(id)?.gain.gain.setTargetAtTime(value, this.context.currentTime, 0.02);
   }
 
   async close(): Promise<void> {

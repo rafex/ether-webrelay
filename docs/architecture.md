@@ -1,133 +1,170 @@
 ---
 title: Arquitectura
-tags: [architecture, hexagonal, frontend]
+tags: [architecture, hexagonal, frontend, webrtc]
 ---
 
 # Arquitectura
 
 Ether WebRelay es **solo frontend**: una aplicación TypeScript (Vite + Pug)
-que corre en el navegador. Captura, compone, codifica y entrega por WebSocket
-a un puente externo que publica en RTMPS.
+donde el invitado entra a una **videollamada** desde un enlace, ve a los demás
+participantes y envía su cámara, pantalla y audio al **puente**
+([`ether-streaming-culerin`](https://github.com/rafex/ether-streaming-culerin)),
+que compone la sala y la publica en RTMPS. El cliente nunca conoce RTMPS.
 
 ## Contexto
 
 ```mermaid
 flowchart LR
-    subgraph Navegador
-        U[Usuario] --> UI[UI Pug + RelayApp]
-        UI --> APP[RelaySession]
+    subgraph Navegadores
+        A[Invitado A · webrelay]
+        B[Invitado B · webrelay]
     end
-    APP -- "wss:// tramas binarias v1" --> BR[(Puente externo)]
-    BR -- RTMPS --> ING[(YouTube / Twitch / servidor propio)]
+    A -- "wss:// señalización v2" --> BR
+    B -- "wss:// señalización v2" --> BR
+    A <== "WebRTC (SFU)" ==> BR
+    B <== "WebRTC (SFU)" ==> BR
+    subgraph BR[Puente · ether-streaming-culerin]
+        SFU[SFU] --> MIX[Composición]
+    end
+    MIX -- RTMPS --> CH[(YouTube / Twitch / …)]
+    HOST[Consola del anfitrión] -. sale al aire .-> BR
     style BR stroke-dasharray: 5 5
 ```
 
-El puente (línea punteada) está fuera del alcance de este repositorio; su
-contrato es [el protocolo](protocol.md).
+- Contrato principal: [señalización v2](signaling.md).
+- Modo alternativo "solo emisor": [protocolo binario v1](protocol-websocket.md)
+  con WebCodecs.
+
+## Flujo del invitado
+
+```mermaid
+stateDiagram-v2
+    [*] --> Carga: /join/<sala>?t=<token>
+    Carga --> EnlaceInvalido: sin sala o token
+    Carga --> Lobby: config.json + soporte del navegador
+    Lobby --> Lobby: room.peek → room.info · vista previa · ajustes
+    Lobby --> Rechazado: error fatal (token, sala)
+    Lobby --> Llamada: Entrar (join)
+    Llamada --> Llamada: escenario ⇄ mínima ⇄ estadísticas
+    Llamada --> Reconectando: caída de red
+    Reconectando --> Llamada: welcome (resume)
+    Llamada --> Fuera: Salir · error
+    Fuera --> Lobby: Volver a entrar
+```
 
 ## Hexágono
 
 ```mermaid
 flowchart TB
-    subgraph driving[Adaptadores de entrada]
-        UI[ui/app.ts · plantillas Pug]
+    subgraph ui[ui · adaptadores de entrada]
+        APP[WebRelayApp] --> LV[LobbyView]
+        APP --> CV[CallView]
+        APP --> SD[SettingsDialog]
+        APP --> REC[CallRecorder]
     end
-    subgraph application[Aplicación]
-        RS[RelaySession]
-        BL[BridgeLink]
+    subgraph application
+        LS[LobbyService]
+        SC[SignalingClient]
+        WC[WebRtcCallSession]
+        WSC[WebSocketCallSession]
+        RS[RelaySession + BridgeLink]
     end
-    subgraph domain[Dominio · sin dependencias]
-        P[protocol]
-        MC[MediaClock]
-        AT[AudioTimeline]
-        KS[KeyframeScheduler]
-        BP[BackpressureGate]
-        RP[ReconnectPolicy]
-        CS[codec-selection]
-        ST[relay-settings]
-        LY[layout]
+    subgraph domain[domain · sin dependencias]
+        SIG[signaling]
+        ROOM[room]
+        INV[invite / app-config]
+        QP[quality-profile]
+        PREF[preferences / shortcuts / view-mode]
+        V1[protocol v1 · políticas · reloj]
     end
-    subgraph ports[Puertos]
-        MPP[[MediaPipelinePort]]
-        TP[[TransportPort]]
-        TM[[Timer / TimeSource]]
-        TC[[TranscoderPort]]
+    subgraph ports
+        P1[[SignalingPort]]
+        P2[[PeerConnectionFactory]]
+        P3[[MediaDevicesPort]]
+        P4[[PreferencesPort]]
+        P5[[VideoEffectsPort]]
+        P6[[ComposableMediaPipelinePort / TransportPort]]
     end
-    subgraph infra[Adaptadores de salida]
-        BMP[BrowserMediaPipeline]
-        CAP[getUserMedia / getDisplayMedia]
-        CMP[CanvasCompositor]
-        MIX[WebAudioMixer + AudioWorklet]
-        ENC[WebCodecs Video/Audio Encoder]
-        WS[WebSocketTransport]
-        FF[FfmpegWasmTranscoder]
+    subgraph infrastructure[infrastructure · adaptadores de salida]
+        I1[WebSocketSignaling]
+        I2[BrowserPeerConnection]
+        I3[BrowserMediaDevices]
+        I4[LocalPreferences]
+        I5[MediaPipeEffects]
+        I6[BrowserMediaPipeline · WebCodecs · WebSocketTransport]
     end
-    UI --> RS
-    RS --> BL
-    RS --> MPP
-    BL --> TP
-    BL --> TM
-    RS --> domain
-    BL --> domain
-    BMP -.implementa.-> MPP
-    WS -.implementa.-> TP
-    FF -.implementa.-> TC
-    BMP --> CAP & CMP & MIX & ENC
+    ui --> application
+    application --> domain
+    application --> ports
+    I1 -.-> P1
+    I2 -.-> P2
+    I3 -.-> P3
+    I4 -.-> P4
+    I5 -.-> P5
+    I6 -.-> P6
+    WC --> SC
+    LS --> SC
+    WSC --> RS
 ```
 
 ### Reglas de dependencia
 
 | Capa | Puede importar | No puede importar |
 |------|----------------|-------------------|
-| `domain/` | nada (solo tipos propios) | ports, application, infrastructure, ui, APIs del navegador |
+| `domain/` | nada | ports, application, infrastructure, ui, APIs del navegador |
 | `ports/` | `domain/` | application, infrastructure, ui |
 | `application/` | `domain/`, `ports/` | infrastructure, ui, APIs del navegador |
 | `infrastructure/` | `domain/`, `ports/` | application, ui |
 | `ui/` | todas | — |
 
-Consecuencia: dominio y aplicación se prueban en Node sin navegador (fakes de
-`MediaPipelinePort`, `TransportPort` y `Timer`).
+`tests/architecture/layers.test.ts` hace cumplir estas reglas. Por eso la
+grabación (que depende del snapshot de la llamada) vive en `ui/`.
 
-## Flujo de medios
+## Llamada WebRTC
 
 ```mermaid
 flowchart LR
-    CAM[Cámara] --> CMP
-    SCR[Pantalla] --> CMP[CanvasCompositor<br/>PiP, tick en Worker]
-    CMP -->|VideoFrame + pts| VE[VideoEncoder<br/>H.264 AVCC / VP8]
-    MIC[Micrófono] --> MIX
-    SYS[Audio sistema/pestaña] --> MIX[WebAudioMixer]
-    MIX -->|PCM planar| AW[AudioWorklet pcm-tap]
-    AW -->|AudioTimeline pts| AE[AudioEncoder<br/>AAC / Opus]
-    VE --> RS[RelaySession]
-    AE --> RS
-    RS -->|BackpressureGate| BL[BridgeLink]
-    BL -->|tramas v1| WS[(WebSocket)]
-    CMP -.captureStream.-> REC[LocalRecorder WebM]
-    MIX -.MediaStream.-> REC
-    REC -->|bajo demanda| FF[ffmpeg.wasm → OGV]
+    LOBBY[LobbyService<br/>LocalMediaProvider] -->|pistas abiertas| CALL[WebRtcCallSession]
+    CALL -->|publish: cámara, mic, pantalla| PUB[(RTCPeerConnection publish)]
+    SUB[(RTCPeerConnection subscribe)] -->|pistas remotas por mid| CALL
+    CALL <-->|JSON v2| SIGC[SignalingClient]
+    CALL -->|snapshot| VIEW[CallView]
+    FX[MediaPipeEffects] -.->|cámara procesada| LOBBY
 ```
 
-- **Un solo reloj** (`MediaClock`) estampa video y audio.
-- **Ticks en Worker**: los timers del hilo principal se ralentizan en pestañas
-  ocultas (habitual al compartir pantalla).
-- **ffmpeg.wasm** solo para formatos que WebCodecs no produce (OGV), cargado
-  bajo demanda: nunca interfiere con la transmisión en vivo.
+- **Una sola conexión de señalización** compartida por lobby y llamada
+  (`SignalingClient`: backoff, heartbeat, errores fatales con mensajes
+  amigables).
+- Los mensajes se procesan **en orden** (cola de promesas); el ICE remoto se
+  encola hasta tener descripción remota.
+- Renegociación **serializada**: peticiones solapadas se agrupan; video y
+  audio de la pantalla salen en una sola oferta.
+- Cámara/pantalla on-off y cambios de dispositivo o efecto usan
+  `replaceTrack`; silenciar solo desactiva la pista.
+- El perfil del puente se aplica a los senders (bitrate escalado al área
+  realmente enviada).
+- Cada dispositivo de la vista previa se muestra en cuanto abre: un permiso de
+  micrófono pendiente no bloquea la cámara.
 
-## Máquina de estados de la sesión
+## Modo alternativo `websocket`
 
-```mermaid
-stateDiagram-v2
-    [*] --> idle
-    idle --> starting: start()
-    starting --> live: welcome
-    live --> reconnecting: socket cerrado / heartbeat perdido
-    reconnecting --> live: welcome (resume)
-    reconnecting --> failed: intentos agotados
-    starting --> failed: error fatal / captura denegada
-    live --> failed: error fatal del puente
-    live --> stopping: stop()
-    stopping --> stopped: BYE
-    stopped --> [*]
-    failed --> [*]
-```
+`WebSocketCallSession` ofrece el mismo `CallController` sobre `RelaySession`:
+las pistas del lobby entran a `BrowserMediaPipeline` (compositor en canvas +
+mezclador Web Audio + WebCodecs), que acepta cambios de fuentes en caliente.
+Se elige con `transport` en `config.json` o en `room.info`.
+
+## Efectos y grabación
+
+- **Efectos** (`MediaPipeEffects`): segmentación a 256 px con el selfie
+  segmenter de MediaPipe; desenfoque por reducción-ampliación (sin filtros de
+  canvas) o fondo procedural/subido. Wasm empaquetado y carga diferida; si
+  falla, la cámara sigue sin efecto.
+- **Grabación** (`CallRecorder`): mosaico igual al escenario + audio mezclado
+  → WebM (MediaRecorder); exportable a OGV con ffmpeg.wasm bajo demanda.
+
+## Configuración en tiempo de ejecución
+
+`/config.json` (o variables `WEBRELAY_*` en el contenedor) define
+`bridgeUrl`, `relayUrl`, `transport`, `defaultProfile`, `defaultView` y
+`effectsModelUrl`. Ninguna credencial ni destino RTMPS forma parte de la
+configuración del cliente.

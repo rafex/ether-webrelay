@@ -10,7 +10,7 @@ updated_at    = "2026-10-12"
 replaces      = "none"
 related_tasks       = ["TASK-0001", "TASK-0002", "TASK-0003", "TASK-0004", "TASK-0005", "TASK-0006", "TASK-0007", "TASK-0008", "TASK-0009", "TASK-0010", "TASK-0011", "TASK-0012"]
 related_decisions   = ["DEC-0001", "DEC-0002", "DEC-0003", "DEC-0004", "DEC-0005", "DEC-0006", "DEC-0007", "DEC-0008"]
-artifacts           = ["source/frontend/nodejs/webrelay/*", "helpers/*", "containers/*", "docs/protocol.md"]
+artifacts           = ["source/frontend/nodejs/webrelay/*", "helpers/*", "containers/*", "docs/protocol-websocket.md"]
 validation          = ["make ci", "make coverage", "prueba manual en navegador"]
 ```
 
@@ -61,7 +61,7 @@ el equipo del puente tenga un contrato probado para implementarlo.
 2. RF2 — La URL del puente debe ser `wss://` (o `ws://` solo en loopback);
    el destino RTMPS opcional debe ser `rtmps://` con clave.
 3. RF3 — Video y audio se estampan con un mismo reloj de sesión en µs.
-4. RF4 — Cada trama sigue el protocolo v1 (`docs/protocol.md`).
+4. RF4 — Cada trama sigue el protocolo v1 (`docs/protocol-websocket.md`).
 5. RF5 — Tras una caída, el cliente reconecta con backoff, reanuda el mismo
    `streamId`, reenvía CONFIG y reanuda el video desde un keyframe marcado.
 6. RF6 — Bajo congestión se descartan frames de video completos hasta un

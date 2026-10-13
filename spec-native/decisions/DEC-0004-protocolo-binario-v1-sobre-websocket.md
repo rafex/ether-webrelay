@@ -24,4 +24,8 @@ Cabecera binaria de 28 bytes big-endian (magic 0x4557, versión, tipo, pista, fl
 
 ## Consecuencias
 
-Cambios incompatibles requieren PROTOCOL_VERSION nuevo y actualizar docs/protocol.md y tests/unit/protocol.test.ts en el mismo cambio.
+Cambios incompatibles requieren PROTOCOL_VERSION nuevo y actualizar docs/protocol-websocket.md y tests/unit/protocol.test.ts en el mismo cambio.
+
+## Alcance actualizado (2026-10-13)
+
+Desde DEC-0012 esta decisión aplica solo al transporte alternativo `websocket` ("solo emisor"). El transporte principal es WebRTC (DEC-0009).

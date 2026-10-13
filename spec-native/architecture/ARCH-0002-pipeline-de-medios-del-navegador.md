@@ -22,3 +22,7 @@ BrowserMediaPipeline: getDisplayMedia/getUserMedia → CanvasCompositor (pantall
 ## Restricciones y consecuencias
 
 Una sola pista de video compuesta por transmisión. Los timestamps de audio derivan del conteo de muestras y nunca se solapan. El encoder descarta frames si su cola supera 3 (latencia acotada).
+
+## Alcance actualizado (2026-10-13)
+
+Desde DEC-0012 esta decisión aplica solo al transporte alternativo `websocket` ("solo emisor"). El transporte principal es WebRTC (DEC-0009).

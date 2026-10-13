@@ -63,3 +63,60 @@ export function overlayRect(
     height,
   };
 }
+
+/**
+ * Mosaic for N tiles: columns = ceil(sqrt(N)); every cell keeps 16:9 and the
+ * grid is centred. Used by the stage and by the call recorder.
+ */
+export function gridLayout(count: number, width: number, height: number, gap = 8): Rect[] {
+  if (count <= 0) return [];
+  const columns = Math.ceil(Math.sqrt(count));
+  const rows = Math.ceil(count / columns);
+  const cellWidth = (width - gap * (columns + 1)) / columns;
+  const cellHeight = (height - gap * (rows + 1)) / rows;
+  const tile = fitContain(16, 9, cellWidth, cellHeight);
+  const usedWidth = columns * tile.width + (columns - 1) * gap;
+  const usedHeight = rows * tile.height + (rows - 1) * gap;
+  const left = (width - usedWidth) / 2;
+  const top = (height - usedHeight) / 2;
+  return Array.from({ length: count }, (_, i) => {
+    const row = Math.floor(i / columns);
+    const inRow = row === rows - 1 ? count - row * columns : columns;
+    // Centre an incomplete last row.
+    const rowOffset = ((columns - inRow) * (tile.width + gap)) / 2;
+    return {
+      x: Math.round(left + rowOffset + (i % columns) * (tile.width + gap)),
+      y: Math.round(top + row * (tile.height + gap)),
+      width: tile.width,
+      height: tile.height,
+    };
+  });
+}
+
+/** Screen share on the left (3/4 width) and participant thumbnails stacked on the right. */
+export function spotlightLayout(
+  thumbnails: number,
+  width: number,
+  height: number,
+  gap = 8,
+): { readonly main: Rect; readonly thumbnails: Rect[] } {
+  if (thumbnails <= 0) {
+    return { main: { x: 0, y: 0, width, height }, thumbnails: [] };
+  }
+  const sideWidth = Math.round(width / 4);
+  const main = fitContain(16, 9, width - sideWidth - gap, height);
+  const thumbHeight = Math.min(
+    Math.round((sideWidth * 9) / 16),
+    (height - gap * (thumbnails - 1)) / thumbnails,
+  );
+  const thumbWidth = Math.round((thumbHeight * 16) / 9);
+  return {
+    main,
+    thumbnails: Array.from({ length: thumbnails }, (_, i) => ({
+      x: width - sideWidth + Math.round((sideWidth - thumbWidth) / 2),
+      y: Math.round(i * (thumbHeight + gap)),
+      width: thumbWidth,
+      height: Math.round(thumbHeight),
+    })),
+  };
+}

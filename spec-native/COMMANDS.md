@@ -13,9 +13,10 @@ make install               # solo dependencias (npm ci)
 ## Desarrollo
 
 ```bash
-just dev                   # Vite en http://localhost:5173 (--port N)
+just bridge-dev            # puente de desarrollo: señalización v2 + mini SFU (ws://localhost:8090/signal)
+just dev                   # Vite en http://localhost:5173/join/demo?t=dev (--port N)
 just preview               # build + vite preview en :4173
-just up                    # imagen + contenedor en http://localhost:8080 (--port N)
+just up                    # imagen + contenedor en http://localhost:8080 (--port N, --bridge-url URL, --view …)
 just logs
 just down
 ```
@@ -27,6 +28,8 @@ make test                  # unit + integración + arquitectura
 make test-unit
 make test-integration
 make coverage              # umbral 80 %
+make e2e                   # Playwright: lobby + llamada real (Chrome instalado si existe)
+make e2e-ci                # E2E dentro de la imagen de Playwright
 ```
 
 ## Lint y formato

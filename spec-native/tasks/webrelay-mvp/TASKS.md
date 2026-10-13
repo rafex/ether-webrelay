@@ -36,7 +36,7 @@ priority       = "p0"
 owner          = "rafex"
 labels         = ["protocol", "domain"]
 dependencies   = []
-expected_files = ["source/frontend/nodejs/webrelay/src/domain/protocol.ts", "docs/protocol.md"]
+expected_files = ["source/frontend/nodejs/webrelay/src/domain/protocol.ts", "docs/protocol-websocket.md"]
 close_criteria = "Codec de tramas y mensajes del puente con round-trip y rechazo de tramas inválidas"
 validation     = ["make test-unit"]
 completion_evidence = ["tests/unit/protocol.test.ts verde (round-trip, offsets big-endian, rechazos, base64)"]
@@ -178,7 +178,7 @@ completion_evidence = ["make docs: Documentation built (strict)", "4 ARCH, 8 DEC
 ```toml
 id             = "TASK-0011"
 title          = "Prueba de interoperabilidad con el puente real"
-state          = "todo"
+state          = "blocked"
 priority       = "p0"
 owner          = "rafex"
 labels         = ["integration", "bridge"]
@@ -189,21 +189,21 @@ validation     = ["prueba manual con el puente"]
 completion_evidence = []
 ```
 
-Bloqueada hasta que exista una implementación del puente que siga
-`docs/protocol.md`.
+Bloqueada: continúa como TASK-0110 (SPEC-0002) sobre la señalización v2,
+contra `ether-streaming-culerin`.
 
 ### TASK-0012 - E2E automatizado en navegador con dispositivos falsos
 
 ```toml
 id             = "TASK-0012"
 title          = "E2E automatizado en navegador con dispositivos falsos"
-state          = "todo"
+state          = "done"
 priority       = "p2"
 owner          = "rafex"
 labels         = ["testing", "e2e"]
 dependencies   = ["TASK-0007"]
 expected_files = ["source/frontend/nodejs/webrelay/tests/e2e/*"]
-close_criteria = "Un test en CI arranca Chromium con --use-fake-device-for-media-stream y verifica tramas H.264/AAC en el puente simulado"
-validation     = ["make ci"]
-completion_evidence = []
+close_criteria = "Un test en CI arranca Chromium con dispositivos falsos y verifica la llamada contra un puente simulado"
+validation     = ["make e2e-ci"]
+completion_evidence = ["Cubierto por TASK-0109 (SPEC-0002): Playwright con WebRTC real contra el puente de desarrollo; make e2e-ci 5 passed"]
 ```

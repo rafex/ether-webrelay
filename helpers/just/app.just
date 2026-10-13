@@ -22,3 +22,7 @@
 # Seguir los logs del contenedor del frontend
 @logs *args:
     bash helpers/shell/container.sh --action app-logs {{args}}
+
+# Puente de desarrollo local (señalización v2 + mini SFU; no publica RTMPS) en `--port 8090`
+@bridge-dev *args:
+    bash helpers/shell/javascript.sh --tool {{tool}} --goal bridge-dev --module {{module}} --port 8090 {{args}}
