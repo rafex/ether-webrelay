@@ -1,0 +1,31 @@
+# Wrapper de CI (regla 06): solo invoca targets del Makefile.
+# Toda la lógica vive en helpers/ y corre en contenedor (podman, preinstalado en ubuntu-latest).
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build CI image
+        run: make image
+
+      - name: Install, lint, build and test in container
+        run: make ci
+
+      - name: Build serving image
+        run: make app-image
