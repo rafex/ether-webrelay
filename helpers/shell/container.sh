@@ -18,6 +18,11 @@ source "$SCRIPT_DIR/lib/messages.sh"
 #   --app-image / --app-containerfile   Imagen servible del frontend
 #   --app-name ether-webrelay           Nombre del contenedor en ejecución
 #   --port 8080                         Puerto publicado en el host (solo 127.0.0.1)
+#   --bridge-url wss://…                config.json en el contenedor: URL de señalización del puente
+#   --relay-url wss://…                 (opcional) endpoint binario del modo websocket
+#   --transport webrtc|websocket        (opcional) transporte por defecto
+#   --view stage|minimal|stats          (opcional) vista por defecto
+#   --effects-model-url URL             (opcional) modelo de segmentación para efectos
 #   --module source/frontend/nodejs/webrelay
 #   --log-file /ruta/al/log  --log-level info  --man
 #
@@ -32,6 +37,7 @@ app_image="ether-webrelay:local"
 app_containerfile="containers/frontend/Containerfile"
 app_name="ether-webrelay"
 port="8080"
+app_env=()
 module="source/frontend/nodejs/webrelay"
 man="false"
 WORKSPACE="${WORKSPACE:-$(pwd)}"
@@ -47,6 +53,11 @@ while [[ $# -gt 0 ]]; do
 		--app-containerfile) app_containerfile="${2:-}"; shift 2 ;;
 		--app-name)          app_name="${2:-}"; shift 2 ;;
 		--port)              port="${2:-}"; shift 2 ;;
+		--bridge-url)        app_env+=(-e "WEBRELAY_BRIDGE_URL=${2:-}"); shift 2 ;;
+		--relay-url)         app_env+=(-e "WEBRELAY_RELAY_URL=${2:-}"); shift 2 ;;
+		--transport)         app_env+=(-e "WEBRELAY_TRANSPORT=${2:-}"); shift 2 ;;
+		--view)              app_env+=(-e "WEBRELAY_DEFAULT_VIEW=${2:-}"); shift 2 ;;
+		--effects-model-url) app_env+=(-e "WEBRELAY_EFFECTS_MODEL_URL=${2:-}"); shift 2 ;;
 		--module)            module="${2:-}"; shift 2 ;;
 		--log-file)          LOG_FILE="${2:-}"; shift 2 ;;
 		--log-level)         LOG_LEVEL="${2:-}"; shift 2 ;;
@@ -129,7 +140,7 @@ case "$action" in
 		build_image "$app_containerfile" "$app_image"
 		"$runtime" rm -f "$app_name" >/dev/null 2>&1 || true
 		# Solo loopback: http://localhost es un contexto seguro para getUserMedia/getDisplayMedia.
-		"$runtime" run -d --name "$app_name" -p "127.0.0.1:$port:8080" "$app_image" >/dev/null
+		"$runtime" run -d --name "$app_name" -p "127.0.0.1:$port:8080" ${app_env[@]+"${app_env[@]}"} "$app_image" >/dev/null
 		success "Ether WebRelay disponible en http://localhost:$port"
 		;;
 	app-stop)
