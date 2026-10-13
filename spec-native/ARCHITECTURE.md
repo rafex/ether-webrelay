@@ -15,7 +15,7 @@
 
 Aplicación de navegador única (`source/frontend/nodejs/webrelay`) con
 arquitectura hexagonal. Integración externa: el **puente** por WebSocket
-(`docs/protocol.md`), que publica en RTMPS. Detalle y diagramas de flujo y
+(`docs/protocol-websocket.md`), que publica en RTMPS. Detalle y diagramas de flujo y
 estados en `docs/architecture.md`.
 
 ```mermaid

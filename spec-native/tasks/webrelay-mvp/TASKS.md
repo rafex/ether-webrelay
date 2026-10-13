@@ -36,7 +36,7 @@ priority       = "p0"
 owner          = "rafex"
 labels         = ["protocol", "domain"]
 dependencies   = []
-expected_files = ["source/frontend/nodejs/webrelay/src/domain/protocol.ts", "docs/protocol.md"]
+expected_files = ["source/frontend/nodejs/webrelay/src/domain/protocol.ts", "docs/protocol-websocket.md"]
 close_criteria = "Codec de tramas y mensajes del puente con round-trip y rechazo de tramas inválidas"
 validation     = ["make test-unit"]
 completion_evidence = ["tests/unit/protocol.test.ts verde (round-trip, offsets big-endian, rechazos, base64)"]
@@ -190,7 +190,7 @@ completion_evidence = []
 ```
 
 Bloqueada hasta que exista una implementación del puente que siga
-`docs/protocol.md`.
+`docs/protocol-websocket.md`.
 
 ### TASK-0012 - E2E automatizado en navegador con dispositivos falsos
 

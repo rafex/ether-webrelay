@@ -20,8 +20,8 @@ El planteamiento original incluía un servidor puente (WebSocket → FFmpeg → 
 
 ## Decisión
 
-ether-webrelay contiene únicamente la aplicación de navegador. El puente es otro sistema; la frontera es el protocolo v1 (docs/protocol.md). Solo se permiten dobles de prueba del puente dentro de tests/.
+ether-webrelay contiene únicamente la aplicación de navegador. El puente es otro sistema; la frontera es el protocolo v1 (docs/protocol-websocket.md). Solo se permiten dobles de prueba del puente dentro de tests/.
 
 ## Consecuencias
 
-No hay código de servidor ni dependencias de runtime de Node en producción. Cualquier cambio de contrato se coordina con el equipo del puente vía docs/protocol.md y versión del protocolo.
+No hay código de servidor ni dependencias de runtime de Node en producción. Cualquier cambio de contrato se coordina con el equipo del puente vía docs/protocol-websocket.md y versión del protocolo.

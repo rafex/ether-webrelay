@@ -1,9 +1,14 @@
 ---
-title: Protocolo Ether WebRelay v1
+title: Protocolo binario v1 (modo websocket)
 tags: [protocol, websocket, bridge, contract]
 ---
 
-# Protocolo Ether WebRelay v1
+# Protocolo binario v1 (modo websocket)
+
+!!! note "Transporte alternativo"
+    El transporte principal es WebRTC con la [señalización v2](signaling.md).
+    Este protocolo se usa solo cuando `transport` es `websocket` (modo "solo
+    emisor": el participante envía su composición y no recibe a los demás).
 
 Contrato entre el **webrelay** (este repositorio, navegador) y el **puente**
 (servidor externo que publica en RTMPS). El puente no forma parte de este

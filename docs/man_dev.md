@@ -13,7 +13,7 @@ make man TARGET=dev
 
 ## Descripción
 
-Levanta Vite en `http://localhost:<port>` con recarga en caliente; los cambios en `.pug` recargan la página completa. `localhost` es contexto seguro, así que la captura de cámara/pantalla funciona sin HTTPS.
+Levanta Vite en `http://localhost:<port>` con recarga en caliente (entra por `/join/<sala>?t=<token>`; combínalo con `just bridge-dev`); los cambios en `.pug` recargan la página completa. `localhost` es contexto seguro, así que la captura de cámara/pantalla funciona sin HTTPS.
 
 ## Ejemplos
 

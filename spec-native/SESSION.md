@@ -17,7 +17,7 @@ MVP del webrelay implementado y verificado (make ci, E2E manual en navegador, OG
 ## Next steps
 
 1. Revisar y mergear la rama feature/webrelay-bootstrap (PR hacia develop/main).
-2. TASK-0011: probar contra el puente real cuando exista (ver docs/protocol.md).
+2. TASK-0011: probar contra el puente real cuando exista (ver docs/protocol-websocket.md).
 3. TASK-0012: E2E en CI con Chromium y dispositivos falsos.
 4. Cerrar la iniciativa con close_initiative('webrelay-mvp') y actualizar TRACEABILITY.md.
 

@@ -17,8 +17,8 @@ El protocolo es el único contrato con el puente externo.
 
 ## Regla
 
-Todo cambio en src/domain/protocol.ts actualiza docs/protocol.md y tests/unit/protocol.test.ts en el mismo commit; cambios incompatibles incrementan PROTOCOL_VERSION y el subprotocolo (ether-webrelay.vN); los mensajes desconocidos del puente se ignoran.
+Todo cambio en src/domain/protocol.ts actualiza docs/protocol-websocket.md y tests/unit/protocol.test.ts en el mismo commit; cambios incompatibles incrementan PROTOCOL_VERSION y el subprotocolo (ether-webrelay.vN); los mensajes desconocidos del puente se ignoran.
 
 ## Consecuencias
 
-El equipo del puente puede depender de docs/protocol.md como fuente de verdad.
+El equipo del puente puede depender de docs/protocol-websocket.md como fuente de verdad.

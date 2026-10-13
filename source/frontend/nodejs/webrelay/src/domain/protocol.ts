@@ -18,7 +18,7 @@
  * | 28     | n    | payload      | codec bytes, or UTF-8 JSON for control frames |
  *
  * All integers are big-endian. Bridge → client traffic is UTF-8 JSON text
- * messages, see {@link BridgeMessage}. Full contract: docs/protocol.md.
+ * messages, see {@link BridgeMessage}. Full contract: docs/protocol-websocket.md.
  */
 import { ProtocolError } from './errors';
 

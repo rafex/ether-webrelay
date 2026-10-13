@@ -9,7 +9,7 @@ captura cámara/micrófono/pantalla, codifica con WebCodecs y transmite por
 WebSocket a un puente RTMPS **externo** (no vive aquí; ver DEC-0001).
 
 - Código: `source/frontend/nodejs/webrelay/` (hexagonal; ver ARCH-0001).
-- Contrato con el puente: `docs/protocol.md` (cambios → CONV-0005).
+- Contrato con el puente: `docs/protocol-websocket.md` (cambios → CONV-0005).
 - Comandos: `spec-native/COMMANDS.md`; todo pasa por `make`/`just` →
   `helpers/shell` (regla 01 de Ether My Best Practice, MCP `ether-rules`).
 - Gate antes de cerrar una tarea: `make ci`.

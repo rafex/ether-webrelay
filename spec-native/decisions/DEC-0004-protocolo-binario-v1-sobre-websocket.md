@@ -24,4 +24,4 @@ Cabecera binaria de 28 bytes big-endian (magic 0x4557, versión, tipo, pista, fl
 
 ## Consecuencias
 
-Cambios incompatibles requieren PROTOCOL_VERSION nuevo y actualizar docs/protocol.md y tests/unit/protocol.test.ts en el mismo cambio.
+Cambios incompatibles requieren PROTOCOL_VERSION nuevo y actualizar docs/protocol-websocket.md y tests/unit/protocol.test.ts en el mismo cambio.

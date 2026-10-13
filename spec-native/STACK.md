@@ -41,7 +41,7 @@ APIs de plataforma: `getUserMedia`, `getDisplayMedia`, Web Audio
 ## Integraciones
 
 - **Puente Ether WebRelay** (externo, crítico): recibe tramas por WebSocket
-  según `docs/protocol.md` y publica en RTMPS. Fuera de este repositorio.
+  según `docs/protocol-websocket.md` y publica en RTMPS. Fuera de este repositorio.
 - **Ingesta RTMPS** (YouTube/Twitch/propia): indirecta, vía el puente.
 
 ## Restricciones
