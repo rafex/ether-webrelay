@@ -9,6 +9,8 @@ export interface CompositorOptions {
   readonly framerate: number;
   readonly clock: MediaClock;
   readonly overlay?: OverlayOptions;
+  /** Drawn when there is no video source (camera off, no share). */
+  readonly placeholder?: string;
 }
 
 /**
@@ -21,8 +23,8 @@ export interface CompositorOptions {
 export class CanvasCompositor {
   readonly canvas: HTMLCanvasElement;
   private readonly context: CanvasRenderingContext2D;
-  private readonly screenVideo: HTMLVideoElement | undefined;
-  private readonly cameraVideo: HTMLVideoElement | undefined;
+  private screenVideo: HTMLVideoElement | undefined;
+  private cameraVideo: HTMLVideoElement | undefined;
   private ticker: Worker | undefined;
   private tickerUrl: string | undefined;
 
@@ -53,6 +55,15 @@ export class CanvasCompositor {
     this.ticker = new Worker(this.tickerUrl);
     this.ticker.onmessage = () => this.tick();
     this.ticker.postMessage(1000 / this.options.framerate);
+  }
+
+  /** Swaps sources while running (camera toggled, screen share started/stopped). */
+  async setSources(sources: {
+    readonly screen?: MediaStreamTrack;
+    readonly camera?: MediaStreamTrack;
+  }): Promise<void> {
+    this.screenVideo = await swapVideo(this.screenVideo, sources.screen);
+    this.cameraVideo = await swapVideo(this.cameraVideo, sources.camera);
   }
 
   /** Composite output for local preview and recording. */
@@ -90,6 +101,15 @@ export class CanvasCompositor {
     ctx.fillRect(0, 0, width, height);
 
     const main = this.screenVideo ?? this.cameraVideo;
+    if (!main && this.options.placeholder) {
+      ctx.fillStyle = '#1f2430';
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = '#e6e9ef';
+      ctx.font = `600 ${Math.round(height / 12)}px system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(this.options.placeholder, width / 2, height / 2);
+    }
     if (main && main.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
       const rect = fitContain(main.videoWidth, main.videoHeight, width, height);
       ctx.drawImage(main, rect.x, rect.y, rect.width, rect.height);
@@ -116,5 +136,21 @@ function videoElementFor(track: MediaStreamTrack): HTMLVideoElement {
   video.muted = true;
   video.playsInline = true;
   video.srcObject = new MediaStream([track]);
+  return video;
+}
+
+async function swapVideo(
+  current: HTMLVideoElement | undefined,
+  track: MediaStreamTrack | undefined,
+): Promise<HTMLVideoElement | undefined> {
+  const currentTrack = (current?.srcObject as MediaStream | null)?.getVideoTracks()[0];
+  if (currentTrack === track) return current;
+  if (current) {
+    current.pause();
+    current.srcObject = null;
+  }
+  if (!track) return undefined;
+  const video = videoElementFor(track);
+  await video.play().catch(() => undefined);
   return video;
 }

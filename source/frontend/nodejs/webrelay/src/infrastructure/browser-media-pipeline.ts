@@ -3,13 +3,13 @@ import { RelayError, RelayErrorCode } from '../domain/errors';
 import { KeyframeScheduler } from '../domain/keyframe-scheduler';
 import { MediaClock } from '../domain/media-clock';
 import type { RelaySettings } from '../domain/relay-settings';
-import type { MediaPipelinePort, MediaPipelineSink } from '../ports/media-pipeline';
+import type {
+  ComposableMediaPipelinePort,
+  MediaPipelineSink,
+  PipelineSources,
+} from '../ports/media-pipeline';
 import { type MixerInput, WebAudioMixer } from './audio/web-audio-mixer';
-import {
-  assertBrowserSupport,
-  type CapturedMedia,
-  captureMedia,
-} from './capture/browser-media-capture';
+import { assertBrowserSupport } from './browser-support';
 import { CanvasCompositor } from './capture/canvas-compositor';
 import {
   selectAudioCodec,
@@ -20,20 +20,24 @@ import {
 import { performanceTimeSource } from './time/performance-time-source';
 
 /**
- * Browser adapter for MediaPipelinePort:
- * getUserMedia/getDisplayMedia → canvas compositor + Web Audio mixer → WebCodecs.
+ * WebSocket-transport pipeline: already-open local tracks → canvas compositor
+ * (screen + camera picture-in-picture) and Web Audio mixer → WebCodecs.
  * Audio and video share one MediaClock so the bridge can interleave them.
+ * Sources can change while live; the audio track always exists (silence when muted).
  */
-export class BrowserMediaPipeline implements MediaPipelinePort {
+export class BrowserMediaPipeline implements ComposableMediaPipelinePort {
   private readonly clock = new MediaClock(performanceTimeSource);
   private readonly keyframes: KeyframeScheduler;
-  private media: CapturedMedia | undefined;
   private compositor: CanvasCompositor | undefined;
   private mixer: WebAudioMixer | undefined;
   private videoEncoder: WebCodecsVideoEncoder | undefined;
   private audioEncoder: WebCodecsAudioEncoder | undefined;
 
-  constructor(private readonly settings: RelaySettings) {
+  constructor(
+    private readonly settings: RelaySettings,
+    private sources: PipelineSources,
+    private readonly placeholder = '',
+  ) {
     this.keyframes = new KeyframeScheduler(settings.keyframeIntervalSec * 1_000_000);
   }
 
@@ -45,21 +49,10 @@ export class BrowserMediaPipeline implements MediaPipelinePort {
     return stream;
   }
 
-  get audioMixer(): WebAudioMixer | undefined {
-    return this.mixer;
-  }
-
   async start(sink: MediaPipelineSink): Promise<void> {
-    assertBrowserSupport();
-    const { sources, video } = this.settings;
+    assertBrowserSupport('websocket');
+    const { video } = this.settings;
     try {
-      this.media = await captureMedia(sources, video);
-      this.media.onScreenEnded(() =>
-        sink.onError(
-          new RelayError(RelayErrorCode.NoSources, 'Se detuvo la compartición de pantalla.'),
-        ),
-      );
-
       const selectedVideo = await selectVideoCodec(video);
       if (!selectedVideo) {
         throw new RelayError(
@@ -68,25 +61,18 @@ export class BrowserMediaPipeline implements MediaPipelinePort {
         );
       }
       this.videoEncoder = new WebCodecsVideoEncoder(selectedVideo, sink);
-
-      const mixerInputs: MixerInput[] = [];
-      if (this.media.microphone)
-        mixerInputs.push({ id: 'microphone', track: this.media.microphone });
-      if (this.media.systemAudio)
-        mixerInputs.push({ id: 'systemAudio', track: this.media.systemAudio });
-
       this.clock.start();
-      if (mixerInputs.length > 0) await this.startAudio(mixerInputs, sink);
+      await this.startAudio(sink);
 
       const videoEncoder = this.videoEncoder;
       this.compositor = new CanvasCompositor(
         {
-          ...(this.media.screen ? { screen: this.media.screen } : {}),
-          ...(this.media.camera ? { camera: this.media.camera } : {}),
+          ...this.videoSources(),
           width: video.width,
           height: video.height,
           framerate: video.framerate,
           clock: this.clock,
+          placeholder: this.placeholder,
         },
         (frame) => {
           const key = this.keyframes.shouldForceKeyframe(frame.timestamp);
@@ -98,6 +84,12 @@ export class BrowserMediaPipeline implements MediaPipelinePort {
       await this.stop();
       throw error;
     }
+  }
+
+  async setSources(sources: PipelineSources): Promise<void> {
+    this.sources = sources;
+    this.mixer?.setInputs(this.audioInputs());
+    await this.compositor?.setSources(this.videoSources());
   }
 
   requestKeyframe(): void {
@@ -112,15 +104,32 @@ export class BrowserMediaPipeline implements MediaPipelinePort {
     await Promise.all([this.videoEncoder?.close(), this.audioEncoder?.close()]);
     this.videoEncoder = undefined;
     this.audioEncoder = undefined;
-    this.media?.stop();
-    this.media = undefined;
   }
 
-  private async startAudio(inputs: MixerInput[], sink: MediaPipelineSink): Promise<void> {
+  private videoSources(): { screen?: MediaStreamTrack; camera?: MediaStreamTrack } {
+    const { screen, camera } = this.sources;
+    return {
+      ...(screen ? { screen: screen as MediaStreamTrack } : {}),
+      ...(camera ? { camera: camera as MediaStreamTrack } : {}),
+    };
+  }
+
+  private audioInputs(): MixerInput[] {
+    const inputs: MixerInput[] = [];
+    if (this.sources.microphone) {
+      inputs.push({ id: 'microphone', track: this.sources.microphone as MediaStreamTrack });
+    }
+    if (this.sources.screenAudio) {
+      inputs.push({ id: 'screenAudio', track: this.sources.screenAudio as MediaStreamTrack });
+    }
+    return inputs;
+  }
+
+  private async startAudio(sink: MediaPipelineSink): Promise<void> {
     const { audio } = this.settings;
     let timeline: AudioTimeline | undefined;
     this.mixer = await WebAudioMixer.create(
-      inputs,
+      this.audioInputs(),
       audio.sampleRate,
       audio.channels,
       (planes, frames) => {

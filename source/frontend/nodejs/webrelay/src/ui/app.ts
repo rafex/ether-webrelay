@@ -3,6 +3,7 @@ import { RelayError } from '../domain/errors';
 import { ReconnectPolicy } from '../domain/reconnect-policy';
 import { hasAudio, validateSettings } from '../domain/relay-settings';
 import { BrowserMediaPipeline } from '../infrastructure/browser-media-pipeline';
+import { captureMedia } from '../infrastructure/capture/browser-media-capture';
 import { FfmpegWasmTranscoder } from '../infrastructure/recording/ffmpeg-wasm-transcoder';
 import { LocalRecorder } from '../infrastructure/recording/local-recorder';
 import { performanceTimeSource } from '../infrastructure/time/performance-time-source';
@@ -62,7 +63,13 @@ export class RelayApp {
     this.showErrors(result.ok ? [] : result.issues.map((issue) => issue.message));
     if (!result.ok) return;
 
-    this.pipeline = new BrowserMediaPipeline(settings);
+    const media = await captureMedia(settings.sources, settings.video);
+    this.pipeline = new BrowserMediaPipeline(settings, {
+      ...(media.camera ? { camera: media.camera } : {}),
+      ...(media.microphone ? { microphone: media.microphone } : {}),
+      ...(media.screen ? { screen: media.screen } : {}),
+      ...(media.systemAudio ? { screenAudio: media.systemAudio } : {}),
+    });
     this.session = new RelaySession(
       {
         pipeline: this.pipeline,
