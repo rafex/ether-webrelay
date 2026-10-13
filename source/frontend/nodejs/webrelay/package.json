@@ -19,7 +19,8 @@
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "lint": "biome check .",
-    "format": "biome format --write ."
+    "format": "biome format --write .",
+    "bridge:dev": "node tests/support/dev-bridge.mjs"
   },
   "dependencies": {
     "@ffmpeg/core": "0.12.10",
@@ -36,6 +37,7 @@
     "typescript": "7.0.2",
     "vite": "8.3.4",
     "vitest": "5.0.4",
+    "werift": "0.24.4",
     "ws": "8.22.0"
   }
 }
