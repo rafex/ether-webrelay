@@ -15,7 +15,12 @@ export interface AppConfig {
   readonly transport: TransportMode;
   readonly defaultProfile: QualityProfile;
   readonly defaultView: ViewMode;
+  /** Segmentation model for background effects; self-host it by pointing to `/models/…`. */
+  readonly effectsModelUrl: string;
 }
+
+export const DEFAULT_EFFECTS_MODEL_URL =
+  'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite';
 
 export type AppConfigResult =
   | { readonly ok: true; readonly config: AppConfig }
@@ -50,6 +55,12 @@ export function parseAppConfig(raw: unknown): AppConfigResult {
   const defaultView = value.defaultView ?? 'stage';
   if (!isViewMode(defaultView)) issues.push('defaultView debe ser "stage", "minimal" o "stats"');
 
+  const effectsModelUrl =
+    typeof value.effectsModelUrl === 'string' ? value.effectsModelUrl : DEFAULT_EFFECTS_MODEL_URL;
+  if (!/^(https:\/\/|\/)/.test(effectsModelUrl)) {
+    issues.push('effectsModelUrl debe ser https:// o una ruta del propio sitio (/models/…)');
+  }
+
   if (issues.length > 0 || !defaultProfile || !isViewMode(defaultView)) {
     return { ok: false, issues };
   }
@@ -61,6 +72,7 @@ export function parseAppConfig(raw: unknown): AppConfigResult {
       transport: transport as TransportMode,
       defaultProfile,
       defaultView,
+      effectsModelUrl,
     },
   };
 }

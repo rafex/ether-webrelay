@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseAppConfig } from '../../src/domain/app-config';
+import { DEFAULT_EFFECTS_MODEL_URL, parseAppConfig } from '../../src/domain/app-config';
 import { parseInvite } from '../../src/domain/invite';
 import { gridLayout, spotlightLayout } from '../../src/domain/layout';
 import {
@@ -56,6 +56,7 @@ describe('parseAppConfig', () => {
         transport: 'webrtc',
         defaultProfile: DEFAULT_PROFILE,
         defaultView: 'stage',
+        effectsModelUrl: DEFAULT_EFFECTS_MODEL_URL,
       },
     });
   });
@@ -81,9 +82,10 @@ describe('parseAppConfig', () => {
       transport: 'carrier-pigeon',
       defaultProfile: { framerate: 500 },
       defaultView: 'cinema',
+      effectsModelUrl: 'http://evil.example.com/model.tflite',
     });
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.issues).toHaveLength(5);
+    if (!result.ok) expect(result.issues).toHaveLength(6);
     expect(parseAppConfig(null)).toMatchObject({ ok: false });
   });
 });
@@ -169,7 +171,7 @@ describe('preferences and identity', () => {
         mirror: false,
         audio: { echoCancellation: false },
         view: 'stats',
-        effect: { kind: 'image', imageId: 'office' },
+        effect: { kind: 'image', imageId: 'aurora' },
       }),
     ).toEqual({
       ...DEFAULT_PREFERENCES,
@@ -178,7 +180,7 @@ describe('preferences and identity', () => {
       mirror: false,
       audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true },
       view: 'stats',
-      effect: { kind: 'image', imageId: 'office' },
+      effect: { kind: 'image', imageId: 'aurora' },
     });
     expect(sanitizePreferences({ effect: { kind: 'image', imageId: '../../etc' } }).effect).toEqual(
       {

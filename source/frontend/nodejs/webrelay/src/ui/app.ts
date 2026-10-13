@@ -53,8 +53,11 @@ export class WebRelayApp {
   private call: CallController | undefined;
   private callView: CallView | undefined;
   private settings: SettingsDialog | undefined;
+  private extensions: AppExtensions = {};
 
-  constructor(private readonly extensions: AppExtensions = {}) {}
+  constructor(
+    private readonly createExtensions: (config: AppConfig) => AppExtensions = () => ({}),
+  ) {}
 
   async start(): Promise<void> {
     showScreen('loading');
@@ -67,6 +70,7 @@ export class WebRelayApp {
     const config = await loadConfig();
     if (!config.ok) return this.invalid(config.message);
     this.config = config.config;
+    this.extensions = this.createExtensions(config.config);
 
     try {
       assertBrowserSupport(this.config.transport);

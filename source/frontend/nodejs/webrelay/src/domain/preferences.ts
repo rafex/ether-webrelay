@@ -16,11 +16,11 @@ export type VideoEffect =
 
 export const NO_EFFECT: VideoEffect = { kind: 'none' };
 
-/** Built-in background images shipped with the app (public/backgrounds/<id>.jpg). */
+/** Built-in backgrounds, drawn procedurally by the effects adapter (no image assets). */
 export const PRESET_BACKGROUNDS: readonly { readonly id: string; readonly label: string }[] = [
-  { id: 'office', label: 'Oficina' },
+  { id: 'aurora', label: 'Aurora' },
+  { id: 'sunset', label: 'Atardecer' },
   { id: 'studio', label: 'Estudio' },
-  { id: 'nature', label: 'Naturaleza' },
 ];
 
 export interface UserPreferences {

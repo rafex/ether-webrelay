@@ -1,5 +1,6 @@
 import { fitContain, type OverlayOptions, overlayRect } from '../../domain/layout';
 import type { MediaClock } from '../../domain/media-clock';
+import { startWorkerTicker, type Ticker } from '../time/worker-ticker';
 
 export interface CompositorOptions {
   readonly screen?: MediaStreamTrack;
@@ -25,8 +26,7 @@ export class CanvasCompositor {
   private readonly context: CanvasRenderingContext2D;
   private screenVideo: HTMLVideoElement | undefined;
   private cameraVideo: HTMLVideoElement | undefined;
-  private ticker: Worker | undefined;
-  private tickerUrl: string | undefined;
+  private ticker: Ticker | undefined;
 
   constructor(
     private readonly options: CompositorOptions,
@@ -44,17 +44,7 @@ export class CanvasCompositor {
 
   async start(): Promise<void> {
     await Promise.all([this.screenVideo?.play(), this.cameraVideo?.play()]);
-    this.tickerUrl = URL.createObjectURL(
-      new Blob(
-        [
-          'let id;onmessage=(e)=>{clearInterval(id);if(e.data>0)id=setInterval(()=>postMessage(0),e.data)}',
-        ],
-        { type: 'text/javascript' },
-      ),
-    );
-    this.ticker = new Worker(this.tickerUrl);
-    this.ticker.onmessage = () => this.tick();
-    this.ticker.postMessage(1000 / this.options.framerate);
+    this.ticker = startWorkerTicker(this.options.framerate, () => this.tick());
   }
 
   /** Swaps sources while running (camera toggled, screen share started/stopped). */
@@ -72,10 +62,8 @@ export class CanvasCompositor {
   }
 
   stop(): void {
-    this.ticker?.postMessage(0);
-    this.ticker?.terminate();
+    this.ticker?.stop();
     this.ticker = undefined;
-    if (this.tickerUrl) URL.revokeObjectURL(this.tickerUrl);
     for (const video of [this.screenVideo, this.cameraVideo]) {
       if (!video) continue;
       video.pause();
