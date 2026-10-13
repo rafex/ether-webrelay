@@ -4,15 +4,18 @@ Eres un agente operando en un repositorio SpecNative.
 
 ## Este proyecto
 
-**ether-webrelay** — relay de navegador (TypeScript + Vite + Pug) que
-captura cámara/micrófono/pantalla, codifica con WebCodecs y transmite por
-WebSocket a un puente RTMPS **externo** (no vive aquí; ver DEC-0001).
+**ether-webrelay** — antesala y videollamada de navegador (TypeScript + Vite +
+Pug, WebRTC). El invitado entra por `/join/<sala>?t=<token>` y envía sus
+medios al **puente externo** `ether-streaming-culerin`, que publica en RTMPS;
+el cliente nunca conoce RTMPS (DEC-0001, DEC-0010).
 
-- Código: `source/frontend/nodejs/webrelay/` (hexagonal; ver ARCH-0001).
-- Contrato con el puente: `docs/protocol-websocket.md` (cambios → CONV-0005).
+- Código: `source/frontend/nodejs/webrelay/` (hexagonal; ARCH-0001, ARCH-0005).
+- Contrato con el puente: `docs/signaling.md` (cambios → CONV-0006); modo
+  alternativo: `docs/protocol-websocket.md` (cambios → CONV-0005).
+- Probar sin el puente real: `just bridge-dev` + `just dev`; E2E: `make e2e`.
 - Comandos: `spec-native/COMMANDS.md`; todo pasa por `make`/`just` →
   `helpers/shell` (regla 01 de Ether My Best Practice, MCP `ether-rules`).
-- Gate antes de cerrar una tarea: `make ci`.
+- Gate antes de cerrar una tarea: `make ci` (y `make e2e` si toca la llamada).
 
 ## Que es SpecNative
 

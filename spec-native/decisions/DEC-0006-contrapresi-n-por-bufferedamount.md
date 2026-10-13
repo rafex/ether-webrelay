@@ -25,3 +25,7 @@ BackpressureGate: >2 MiB en bufferedAmount descarta video delta y espera keyfram
 ## Consecuencias
 
 Bajo congestión el espectador ve congelamientos cortos en vez de artefactos o retraso creciente.
+
+## Alcance actualizado (2026-10-13)
+
+Desde DEC-0012 esta decisión aplica solo al transporte alternativo `websocket` ("solo emisor"). El transporte principal es WebRTC (DEC-0009).

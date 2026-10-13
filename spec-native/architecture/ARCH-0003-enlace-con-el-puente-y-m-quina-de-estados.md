@@ -22,3 +22,7 @@ BridgeLink gestiona handshake (HELLO→welcome, timeout 5 s), heartbeat (PING/po
 ## Restricciones y consecuencias
 
 Errores fatales del puente terminan la sesión sin reintentos. Eventos de conexiones abandonadas se ignoran por número de intento. Ver docs/protocol-websocket.md.
+
+## Alcance actualizado (2026-10-13)
+
+Desde DEC-0012 esta decisión aplica solo al transporte alternativo `websocket` ("solo emisor"). El transporte principal es WebRTC (DEC-0009).

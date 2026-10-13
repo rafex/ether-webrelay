@@ -6,8 +6,9 @@ Integración continua del proyecto.
 
 - Pipeline canónico: **local en contenedor** — `make ci`
   (`containers/ci/Containerfile`, Node 24 Alpine, podman → docker).
-- Wrapper remoto: GitHub Actions, `.github/workflows/ci.yml` (solo invoca
-  `make image`, `make ci`, `make app-image`; no contiene lógica).
+- Wrapper remoto: GitHub Actions, `.github/workflows/ci.yml` con dos jobs que
+  solo invocan targets: `build-test` (`make ci`, `make app-image`) y `e2e`
+  (`make e2e-ci`).
 - Resultados: pestaña Actions del repositorio; localmente, la salida de
   `make ci` y los logs de auditoría en `/var/log/ether-webrelay/` o
   `/tmp/ether-webrelay/`.
@@ -16,8 +17,8 @@ Integración continua del proyecto.
 
 | Evento | Pipeline que se ejecuta |
 | --- | --- |
-| Pull request abierto/actualizado | `make image` → `make ci` → `make app-image` |
-| Push a `main` o `develop` | `make image` → `make ci` → `make app-image` |
+| Pull request abierto/actualizado | `make ci` → `make app-image` · `make e2e-ci` |
+| Push a `main` o `develop` | `make ci` → `make app-image` · `make e2e-ci` |
 | Commit local | hook `pre-commit` → `make pre-commit` |
 | Push local | hook `pre-push` → `make pre-push` |
 
@@ -33,6 +34,7 @@ Integración continua del proyecto.
 | Tests de integración | Vitest + puente simulado `ws` | `make test-integration` |
 | Reglas de arquitectura | Vitest (`tests/architecture`) | `make test` |
 | Imagen servible | Containerfile frontend | `make app-image` |
+| E2E de navegador | Playwright + puente de desarrollo | `make e2e` / `make e2e-ci` |
 | Todo lo anterior en contenedor | podman/docker | `make ci` |
 
 ## Gates opcionales o informativos

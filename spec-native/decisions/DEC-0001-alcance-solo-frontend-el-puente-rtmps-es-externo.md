@@ -25,3 +25,7 @@ ether-webrelay contiene únicamente la aplicación de navegador. El puente es ot
 ## Consecuencias
 
 No hay código de servidor ni dependencias de runtime de Node en producción. Cualquier cambio de contrato se coordina con el equipo del puente vía docs/protocol-websocket.md y versión del protocolo.
+
+## Actualización (2026-10-13)
+
+El puente se implementa en el repositorio hermano `ether-streaming-culerin`. El contrato principal pasa a ser la señalización v2 (`docs/signaling.md`, DEC-0009); el cliente no conoce RTMPS (DEC-0010).

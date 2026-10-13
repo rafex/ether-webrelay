@@ -22,3 +22,4 @@ viven en `conventions/CONV-XXXX-<slug>.md`.
 | [CONV-0003](./conventions/CONV-0003-tooling-makefile-construye-justfile-opera-helper.md) | active | Tooling: Makefile construye, Justfile opera, helpers ejecutan | concern/build, rule/ether-best-practice |
 | [CONV-0004](./conventions/CONV-0004-commits-convencionales-y-git-flow.md) | active | Commits convencionales y Git Flow | concern/git, workflow/commits |
 | [CONV-0005](./conventions/CONV-0005-cambios-al-protocolo.md) | active | Cambios al protocolo | concern/protocol, workflow/review |
+| [CONV-0006](./conventions/CONV-0006-cambios-a-la-se-alizaci-n-v2.md) | active | Cambios a la señalización v2 | concern/protocol, workflow/review |

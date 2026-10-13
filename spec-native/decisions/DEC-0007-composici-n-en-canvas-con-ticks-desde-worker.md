@@ -25,3 +25,7 @@ Componer en un canvas 2D (pantalla con letterbox + cámara PiP) y emitir VideoFr
 ## Consecuencias
 
 Costo de un drawImage por fuente y frame; a cambio, un único encoder y layout controlado. Layout configurable en domain/layout.ts.
+
+## Alcance actualizado (2026-10-13)
+
+Desde DEC-0012 esta decisión aplica solo al transporte alternativo `websocket` ("solo emisor"). El transporte principal es WebRTC (DEC-0009).
