@@ -1,0 +1,52 @@
+section#call.screen.call(data-screen="call" data-view="stage" hidden)
+  header.call-header
+    span#call-badge.badge(data-state="joining") Conectando
+    h1#call-title
+    span#call-mode-note.note(hidden) Modo solo emisor: no recibes a los demás participantes
+  .call-body
+    main#stage.stage(aria-label="Participantes")
+    aside#stats-panel.stats-panel(aria-label="Estadísticas")
+      h2 Estadísticas
+      dl
+        each label, key in {uploadBps: 'Subida', downloadBps: 'Bajada', rttMs: 'RTT', packetLossPercent: 'Pérdida', sendResolution: 'Resolución enviada', sendFps: 'FPS enviados', videoCodec: 'Códec de video', candidateType: 'Conexión', participants: 'Participantes', profile: 'Perfil del puente'}
+          div
+            dt= label
+            dd(data-stat=key) –
+  .minimal-card#minimal-card
+    .minimal-video
+      video#minimal-self(muted playsinline autoplay)
+      .tile-off#minimal-off
+        span#minimal-initials.avatar.large
+    .minimal-row
+      span#minimal-state.badge(data-state="joining") Conectando
+      span#minimal-count
+  nav.control-bar(aria-label="Controles de la llamada")
+    button#call-mic.control.toggle(type="button" aria-pressed="true" title="Micrófono (M)")
+      +icon('mic')(class="when-on")
+      +icon('mic-off')(class="when-off")
+      span.control-label Micrófono
+    button#call-cam.control.toggle(type="button" aria-pressed="true" title="Cámara (V)")
+      +icon('video')(class="when-on")
+      +icon('video-off')(class="when-off")
+      span.control-label Cámara
+    button#call-screen.control(type="button" aria-pressed="false" title="Compartir pantalla (S)")
+      +icon('screen')
+      span.control-label Compartir
+    .view-switcher
+      button#call-view.control(type="button" aria-haspopup="menu" aria-expanded="false" title="Cambiar vista (L)")
+        +icon('layout')
+        span.control-label Vista
+      ul#view-menu.menu(role="menu" hidden)
+        each label, mode in {stage: 'Escenario', minimal: 'Mínima', stats: 'Escenario + estadísticas'}
+          li
+            button(type="button" role="menuitemradio" data-view-option=mode)= label
+    button#call-record.control(type="button" aria-pressed="false" title="Grabar en este navegador")
+      +icon('record')
+      span.control-label Grabar
+    button#call-settings.control(type="button" title="Ajustes (,)")
+      +icon('settings')
+      span.control-label Ajustes
+    button#call-leave.control.danger(type="button" title="Salir")
+      +icon('leave')
+      span.control-label Salir
+  .toast-region#toasts(role="status" aria-live="polite")

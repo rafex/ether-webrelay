@@ -13,22 +13,55 @@ describe('Pug templates', () => {
     expect(html.startsWith('<!DOCTYPE html>')).toBe(true);
     expect(html).not.toContain('<pug');
     expect(html).toContain('<script type="module" src="/src/main.ts"></script>');
-    expect(html).toContain('v9.9.9');
+    // Each screen is present; only the loading one is visible at first.
+    for (const screen of ['loading', 'invalid', 'lobby', 'call', 'left']) {
+      expect(html).toContain(`data-screen="${screen}"`);
+    }
+    expect(html).not.toMatch(/rtmps|stream ?key|clave de stream/i);
     for (const id of [
-      'relay-form',
-      'bridgeUrl',
-      'camera',
-      'microphone',
-      'screen',
-      'systemAudio',
-      'resolution',
-      'framerate',
-      'start',
-      'stop',
-      'preview',
-      'state-badge',
-      'record',
-      'export-ogv',
+      'join-form',
+      'join-name',
+      'join-title',
+      'join-button',
+      'lobby-preview',
+      'lobby-mic',
+      'lobby-cam',
+      'lobby-settings',
+      'lobby-effects',
+      'room-title',
+      'host-name',
+      'channel-list',
+      'call',
+      'stage',
+      'call-mic',
+      'call-cam',
+      'call-screen',
+      'call-view',
+      'view-menu',
+      'call-record',
+      'call-settings',
+      'call-leave',
+      'stats-panel',
+      'minimal-card',
+      'settings',
+      'set-camera',
+      'set-microphone',
+      'set-speaker',
+      'set-resolution',
+      'set-mirror',
+      'set-echo',
+      'set-noise',
+      'set-gain',
+      'background-choices',
+      'background-upload',
+      'set-name',
+      'set-title',
+      'shortcut-list',
+      'tpl-tile',
+      'tpl-toast',
+      'invalid-message',
+      'left-message',
+      'rejoin',
     ]) {
       expect(html, `#${id}`).toContain(`id="${id}"`);
     }

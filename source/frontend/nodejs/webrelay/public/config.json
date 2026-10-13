@@ -1,0 +1,6 @@
+{
+  "bridgeUrl": "ws://localhost:8090/signal",
+  "relayUrl": "ws://localhost:8090/relay",
+  "transport": "webrtc",
+  "defaultView": "stage"
+}

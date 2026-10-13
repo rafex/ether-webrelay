@@ -1,3 +1,3 @@
-import { RelayApp } from './ui/app';
+import { WebRelayApp } from './ui/app';
 
-new RelayApp(document).mount();
+void new WebRelayApp().start();

@@ -1,0 +1,68 @@
+include ../mixins/form.pug
+
+dialog#settings.settings(aria-labelledby="settings-heading")
+  .settings-layout
+    nav.settings-nav(aria-label="Secciones de ajustes")
+      h2#settings-heading Ajustes
+      each item in [{id: 'video', label: 'Video y efectos', icon: 'video'}, {id: 'audio', label: 'Audio', icon: 'mic'}, {id: 'background', label: 'Fondo virtual', icon: 'image'}, {id: 'profile', label: 'Perfil', icon: 'user'}, {id: 'shortcuts', label: 'Atajos', icon: 'keyboard'}]
+        button.settings-tab(type="button" data-section=item.id aria-controls=`section-${item.id}`)
+          +icon(item.icon)
+          span= item.label
+          +icon('chevron-right')(class="chevron")
+    .settings-content
+      button#settings-close.icon-button.close(type="button" aria-label="Cerrar ajustes")
+        +icon('x')
+
+      section#section-video.settings-section(data-section-panel="video")
+        .settings-preview
+          video#settings-preview(muted playsinline autoplay)
+        .segmented(role="tablist")
+          button#video-tab-camera(type="button" role="tab" aria-selected="true" data-video-tab="camera")
+            +icon('video')
+            | Cámara
+          button#video-tab-effects(type="button" role="tab" aria-selected="false" data-video-tab="effects")
+            +icon('sparkles')
+            | Efectos
+        .video-tab(data-video-panel="camera")
+          +select('set-camera', 'Entrada de video')
+          +select('set-resolution', 'Resolución de video')
+          +switch('set-mirror', 'Cámara en espejo', 'Solo afecta a tu vista previa; los demás te ven sin invertir.')
+        .video-tab(data-video-panel="effects" hidden)
+          p.hint Los efectos se aplican antes de enviar tu cámara.
+          .choice-grid#effect-choices
+            button.choice(type="button" data-effect="none") Sin efecto
+            button.choice(type="button" data-effect="blur-light") Desenfoque leve
+            button.choice(type="button" data-effect="blur-strong") Desenfoque fuerte
+
+      section#section-audio.settings-section(data-section-panel="audio" hidden)
+        +select('set-microphone', 'Micrófono')
+        .level-meter.wide(aria-hidden="true")
+          span#settings-level
+        .field#speaker-field
+          +select('set-speaker', 'Altavoz')
+          button#test-speaker.button.secondary(type="button")
+            +icon('volume')
+            span Probar altavoz
+        +switch('set-echo', 'Cancelación de eco')
+        +switch('set-noise', 'Supresión de ruido')
+        +switch('set-gain', 'Control automático de ganancia')
+
+      section#section-background.settings-section(data-section-panel="background" hidden)
+        p.hint Reemplaza o desenfoca lo que hay detrás de ti.
+        .choice-grid.backgrounds#background-choices
+          button.choice(type="button" data-effect="none") Ninguno
+          button.choice(type="button" data-effect="blur-strong") Desenfocar
+        label.button.secondary.upload
+          +icon('image')
+          span Subir imagen
+          input#background-upload(type="file" accept="image/png,image/jpeg,image/webp" hidden)
+        p#effects-status.hint(role="status")
+
+      section#section-profile.settings-section(data-section-panel="profile" hidden)
+        +text('set-name', 'Nombre', 'Tu nombre', 60)
+        +text('set-title', 'Título (opcional)', 'p. ej. Invitada', 80)
+        p#profile-hint.hint Así te verán los demás participantes y en la emisión.
+
+      section#section-shortcuts.settings-section(data-section-panel="shortcuts" hidden)
+        p.hint Funcionan cuando no estás escribiendo en un campo de texto.
+        dl.shortcuts#shortcut-list
