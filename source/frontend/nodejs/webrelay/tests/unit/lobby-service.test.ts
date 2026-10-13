@@ -195,6 +195,23 @@ describe('LobbyService', () => {
     expect(h.lobby.snapshot.devices.map((d) => d.id)).toContain('cam-2');
   });
 
+  it('shows the camera while the microphone permission is still pending', async () => {
+    const h = setup();
+    let grantMicrophone: (() => void) | undefined;
+    const original = h.devices.microphone.bind(h.devices);
+    h.devices.microphone = (constraints) =>
+      new Promise((resolve) => {
+        grantMicrophone = () => void original(constraints).then(resolve);
+      });
+    const started = h.lobby.start();
+    await flushMicrotasks();
+    expect(h.lobby.snapshot.camera).toBeDefined();
+    expect(h.lobby.snapshot.microphone).toBeUndefined();
+    grantMicrophone?.();
+    await started;
+    expect(h.lobby.snapshot.microphone).toBeDefined();
+  });
+
   it('releases everything on dispose', async () => {
     const h = setup();
     await h.lobby.start();

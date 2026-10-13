@@ -228,14 +228,23 @@ export class LobbyService implements LocalMediaProvider {
     });
   }
 
+  /**
+   * Each device is shown as soon as it opens: a pending microphone permission
+   * prompt must not keep the camera preview (or the device list) waiting.
+   */
   private async openPreview(): Promise<void> {
+    const open = (enabled: boolean, reopen: () => Promise<void>) =>
+      enabled
+        ? reopen().then(async () => {
+            // Device labels are only exposed after a permission grant.
+            await this.refreshDevices();
+          })
+        : Promise.resolve();
     await Promise.all([
-      this.prefs.cameraEnabled ? this.reopenCamera() : Promise.resolve(),
-      this.prefs.microphoneEnabled ? this.reopenMicrophone() : Promise.resolve(),
+      open(this.prefs.cameraEnabled, () => this.reopenCamera()),
+      open(this.prefs.microphoneEnabled, () => this.reopenMicrophone()),
     ]);
-    // Device labels are only exposed after a permission grant.
     await this.refreshDevices();
-    this.emit();
   }
 
   private async reopenCamera(): Promise<void> {
@@ -246,6 +255,7 @@ export class LobbyService implements LocalMediaProvider {
     } catch (error) {
       this.cameraError = describe(error);
     }
+    this.emit();
   }
 
   private async reopenMicrophone(): Promise<void> {
@@ -256,6 +266,7 @@ export class LobbyService implements LocalMediaProvider {
     } catch (error) {
       this.microphoneError = describe(error);
     }
+    this.emit();
   }
 
   private releaseCamera(): void {
