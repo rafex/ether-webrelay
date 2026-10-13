@@ -17,6 +17,7 @@ source "$SCRIPT_DIR/lib/messages.sh"
 #   --ci-image / --ci-containerfile     Imagen de CI (toolchain)
 #   --app-image / --app-containerfile   Imagen servible del frontend
 #   --app-name ether-webrelay           Nombre del contenedor en ejecución
+#   --e2e-image / --e2e-containerfile   Imagen de E2E (Playwright)
 #   --port 8080                         Puerto publicado en el host (solo 127.0.0.1)
 #   --bridge-url wss://…                config.json en el contenedor: URL de señalización del puente
 #   --relay-url wss://…                 (opcional) endpoint binario del modo websocket
@@ -36,6 +37,8 @@ ci_containerfile="containers/ci/Containerfile"
 app_image="ether-webrelay:local"
 app_containerfile="containers/frontend/Containerfile"
 app_name="ether-webrelay"
+e2e_image="ether-webrelay-e2e:local"
+e2e_containerfile="containers/e2e/Containerfile"
 port="8080"
 app_env=()
 module="source/frontend/nodejs/webrelay"
@@ -52,6 +55,8 @@ while [[ $# -gt 0 ]]; do
 		--app-image)         app_image="${2:-}"; shift 2 ;;
 		--app-containerfile) app_containerfile="${2:-}"; shift 2 ;;
 		--app-name)          app_name="${2:-}"; shift 2 ;;
+		--e2e-image)         e2e_image="${2:-}"; shift 2 ;;
+		--e2e-containerfile) e2e_containerfile="${2:-}"; shift 2 ;;
 		--port)              port="${2:-}"; shift 2 ;;
 		--bridge-url)        app_env+=(-e "WEBRELAY_BRIDGE_URL=${2:-}"); shift 2 ;;
 		--relay-url)         app_env+=(-e "WEBRELAY_RELAY_URL=${2:-}"); shift 2 ;;
@@ -110,6 +115,24 @@ build_image() {
 	"$runtime" build "${format[@]}" -f "$WORKSPACE/$containerfile" -t "$image" "$WORKSPACE"
 }
 
+# El árbol de trabajo entra por stdin (tar) en lugar de un bind-mount:
+#  - funciona con VMs de podman/docker que no comparten la ruta (macOS + volúmenes externos);
+#  - deja fuera node_modules/dist del host (binarios nativos de otra plataforma).
+# Solo la caché de npm persiste entre ejecuciones (volumen con nombre).
+run_streamed() {
+	local image="$1" command="$2"
+	COPYFILE_DISABLE=1 tar -C "$WORKSPACE" \
+		--exclude=node_modules --exclude=dist --exclude=coverage --exclude=site \
+		--exclude=test-results --exclude=playwright-report \
+		--exclude=.git --exclude=.specnative/.venv \
+		-cf - . |
+		"$runtime" run --rm -i \
+			-v ether-webrelay-npm-cache:/root/.npm \
+			-e CI=true \
+			"$image" \
+			"mkdir -p /workspace && tar -xf - -C /workspace 2>/dev/null && cd /workspace && $command"
+}
+
 case "$action" in
 	runtime)
 		;;
@@ -118,20 +141,13 @@ case "$action" in
 		;;
 	ci)
 		build_image "$ci_containerfile" "$ci_image"
-		# El árbol de trabajo entra por stdin (tar) en lugar de un bind-mount:
-		#  - funciona con VMs de podman/docker que no comparten la ruta (macOS + volúmenes externos);
-		#  - deja fuera node_modules/dist del host (binarios nativos de otra plataforma).
-		# Solo la caché de npm persiste entre ejecuciones (volumen con nombre).
 		log_info "Running containerized CI (install + lint + build + test)"
-		COPYFILE_DISABLE=1 tar -C "$WORKSPACE" \
-			--exclude=node_modules --exclude=dist --exclude=coverage --exclude=site \
-			--exclude=.git --exclude=.specnative/.venv \
-			-cf - . |
-			"$runtime" run --rm -i \
-				-v ether-webrelay-npm-cache:/root/.npm \
-				-e CI=true \
-				"$ci_image" \
-				"mkdir -p /workspace && tar -xf - -C /workspace 2>/dev/null && cd /workspace && make install lint build test MODULE=$module"
+		run_streamed "$ci_image" "make install lint build test MODULE=$module"
+		;;
+	e2e-ci)
+		build_image "$e2e_containerfile" "$e2e_image"
+		log_info "Running containerized E2E (Playwright + dev bridge)"
+		run_streamed "$e2e_image" "cd $module && npm ci && npx playwright test"
 		;;
 	app-image)
 		build_image "$app_containerfile" "$app_image"

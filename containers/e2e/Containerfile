@@ -1,0 +1,17 @@
+# containers/e2e/Containerfile — E2E de navegador (reglas 06 y 08).
+#
+#   make e2e-ci   → construye esta imagen y corre Playwright dentro
+#
+# Excepción a "Alpine primero": Playwright/Chromium requiere glibc, así que se
+# usa la imagen oficial de Playwright (Ubuntu noble) alineada con la versión de
+# @playwright/test del proyecto (1.62.1) y fijada por digest del índice multi-arch.
+FROM mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
+
+ENV CI=true \
+    npm_config_update_notifier=false \
+    npm_config_fund=false \
+    npm_config_audit=false
+
+WORKDIR /workspace
+ENTRYPOINT ["/bin/bash", "-lc"]
+CMD ["npx playwright test"]

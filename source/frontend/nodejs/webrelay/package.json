@@ -20,7 +20,8 @@
     "coverage": "vitest run --coverage",
     "lint": "biome check .",
     "format": "biome format --write .",
-    "bridge:dev": "node tests/support/dev-bridge.mjs"
+    "bridge:dev": "node tests/support/dev-bridge.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@ffmpeg/core": "0.12.10",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
+    "@playwright/test": "1.62.1",
     "@types/node": "26.6.5",
     "@types/pug": "2.0.10",
     "@types/ws": "8.18.2",
