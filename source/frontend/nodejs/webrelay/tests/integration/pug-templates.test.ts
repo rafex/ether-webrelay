@@ -17,9 +17,6 @@ describe('Pug templates', () => {
     for (const id of [
       'relay-form',
       'bridgeUrl',
-      'token',
-      'destinationUrl',
-      'streamKey',
       'camera',
       'microphone',
       'screen',

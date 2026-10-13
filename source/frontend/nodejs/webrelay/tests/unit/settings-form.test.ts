@@ -5,9 +5,6 @@ describe('settingsFromForm', () => {
   it('maps raw form values into relay settings', () => {
     const settings = settingsFromForm({
       bridgeUrl: ' wss://bridge.example.com/relay ',
-      token: 'abc',
-      destinationUrl: 'rtmps://live.example.com/app',
-      streamKey: 'key-1',
       camera: true,
       microphone: true,
       screen: true,
@@ -22,8 +19,6 @@ describe('settingsFromForm', () => {
     });
     expect(settings).toEqual({
       bridgeUrl: 'wss://bridge.example.com/relay',
-      token: 'abc',
-      destination: { url: 'rtmps://live.example.com/app', streamKey: 'key-1' },
       sources: { camera: true, microphone: true, screen: true, systemAudio: false },
       video: { width: 1920, height: 1080, framerate: 60, bitrate: 6_000_000, codec: 'vp8' },
       audio: { sampleRate: 48_000, channels: 2, bitrate: 160_000, codec: 'opus' },
@@ -31,10 +26,9 @@ describe('settingsFromForm', () => {
     });
   });
 
-  it('omits optional credentials and falls back to defaults', () => {
+  it('falls back to defaults and never carries RTMPS details', () => {
     const settings = settingsFromForm({ bridgeUrl: 'wss://b', camera: true });
-    expect(settings.token).toBeUndefined();
-    expect(settings.destination).toBeUndefined();
+    expect(settings).not.toHaveProperty('destination');
     expect(settings.video).toMatchObject({
       width: 1280,
       height: 720,

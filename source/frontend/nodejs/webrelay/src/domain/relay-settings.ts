@@ -1,4 +1,5 @@
-import type { AudioCodecFamily, RtmpsDestination, VideoCodecFamily } from './protocol';
+import type { AudioCodecFamily, VideoCodecFamily } from './protocol';
+import type { QualityProfile } from './quality-profile';
 
 export interface SourceSelection {
   readonly camera: boolean;
@@ -23,10 +24,9 @@ export interface AudioSettings {
   readonly codec: AudioCodecFamily;
 }
 
+/** Media settings for the `websocket` (WebCodecs) transport. Never carries RTMPS details. */
 export interface RelaySettings {
   readonly bridgeUrl: string;
-  readonly token?: string;
-  readonly destination?: RtmpsDestination;
   readonly sources: SourceSelection;
   readonly video: VideoSettings;
   readonly audio: AudioSettings;
@@ -80,27 +80,10 @@ export function validateBridgeUrl(value: string): SettingsIssue | undefined {
   };
 }
 
-export function validateDestination(destination: RtmpsDestination): SettingsIssue[] {
-  const issues: SettingsIssue[] = [];
-  try {
-    const url = new URL(destination.url);
-    if (url.protocol !== 'rtmps:') {
-      issues.push({ field: 'destination.url', message: 'El destino debe ser una URL rtmps://' });
-    }
-  } catch {
-    issues.push({ field: 'destination.url', message: 'La URL de destino no es válida' });
-  }
-  if (destination.streamKey.trim() === '') {
-    issues.push({ field: 'destination.streamKey', message: 'La clave de stream es obligatoria' });
-  }
-  return issues;
-}
-
 export function validateSettings(settings: RelaySettings): SettingsResult {
   const issues: SettingsIssue[] = [];
   const bridgeIssue = validateBridgeUrl(settings.bridgeUrl);
   if (bridgeIssue) issues.push(bridgeIssue);
-  if (settings.destination) issues.push(...validateDestination(settings.destination));
 
   const { sources, video, audio } = settings;
   if (!sources.camera && !sources.screen) {
@@ -146,6 +129,27 @@ export function validateSettings(settings: RelaySettings): SettingsResult {
     });
   }
   return issues.length === 0 ? { ok: true, settings } : { ok: false, issues };
+}
+
+/** Derives WebCodecs settings from the bridge's quality profile. */
+export function relaySettingsFromProfile(
+  bridgeUrl: string,
+  profile: QualityProfile,
+  sources: SourceSelection,
+): RelaySettings {
+  return {
+    bridgeUrl,
+    sources,
+    video: {
+      ...DEFAULT_VIDEO,
+      width: profile.width,
+      height: profile.height,
+      framerate: profile.framerate,
+      bitrate: profile.videoBitrate,
+    },
+    audio: { ...DEFAULT_AUDIO, bitrate: profile.audioBitrate },
+    keyframeIntervalSec: DEFAULT_KEYFRAME_INTERVAL_SEC,
+  };
 }
 
 export function hasAudio(sources: SourceSelection): boolean {

@@ -5,12 +5,6 @@ form#relay-form.panel(novalidate autocomplete="off")
     legend Puente
     +field('bridgeUrl', 'URL del puente (wss://)', 'url')(placeholder="wss://bridge.example.com/relay" required)
       | Solo wss://; ws:// se permite únicamente para localhost.
-    +field('token', 'Token de acceso', 'password')(placeholder="opcional")
-  fieldset
-    legend Destino RTMPS (opcional)
-    +field('destinationUrl', 'URL de ingesta', 'url')(placeholder="rtmps://a.rtmps.youtube.com/live2")
-      | Déjalo vacío si el puente ya conoce el destino.
-    +field('streamKey', 'Clave de stream', 'password')
   fieldset
     legend Fuentes
     .toggles

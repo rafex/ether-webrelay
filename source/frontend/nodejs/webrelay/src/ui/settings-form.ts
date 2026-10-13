@@ -17,14 +17,8 @@ export function settingsFromForm(values: FormValues): RelaySettings {
   const width = resolution ? Number(resolution[1]) : DEFAULT_VIDEO.width;
   const height = resolution ? Number(resolution[2]) : DEFAULT_VIDEO.height;
 
-  const token = text('token');
-  const destinationUrl = text('destinationUrl');
-  const streamKey = text('streamKey');
-
   return {
     bridgeUrl: text('bridgeUrl'),
-    ...(token ? { token } : {}),
-    ...(destinationUrl || streamKey ? { destination: { url: destinationUrl, streamKey } } : {}),
     sources: {
       camera: flag('camera'),
       microphone: flag('microphone'),

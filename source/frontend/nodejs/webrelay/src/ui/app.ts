@@ -72,8 +72,6 @@ export class RelayApp {
             streamId: newStreamId(),
             tracks: hasAudio(settings.sources) ? ['video', 'audio'] : ['video'],
             userAgent: navigator.userAgent,
-            ...(settings.token ? { token: settings.token } : {}),
-            ...(settings.destination ? { destination: settings.destination } : {}),
           },
           transport: new WebSocketTransport(),
           reconnectPolicy: new ReconnectPolicy(),

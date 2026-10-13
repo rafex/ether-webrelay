@@ -27,7 +27,7 @@ sequenceDiagram
     participant B as puente
     participant R as RTMPS (YouTube/Twitch/propio)
     W->>B: WebSocket upgrade (ether-webrelay.v1)
-    W->>B: HELLO {streamId, resume:false, token?, destination?}
+    W->>B: HELLO {streamId, resume:false, room, token, name}
     B-->>W: {"type":"welcome","streamId","resumed":false}
     B->>R: connect + publish (FLV)
     W->>B: CONFIG video (avcC) / CONFIG audio (ASC)
@@ -86,8 +86,10 @@ desconocidos, o con longitud inconsistente.
   "version": 1,
   "streamId": "wr-6f0c…",
   "resume": false,
-  "token": "opcional",
-  "destination": { "url": "rtmps://a.rtmps.youtube.com/live2", "streamKey": "…" },
+  "room": "jdh-s02e38",
+  "token": "<token del enlace de invitación>",
+  "name": "Raúl",
+  "title": "Invitado",
   "tracks": ["video", "audio"],
   "userAgent": "…"
 }
@@ -95,9 +97,9 @@ desconocidos, o con longitud inconsistente.
 
 - `streamId` identifica la transmisión; se reutiliza en cada reconexión.
 - `resume: true` indica que el cliente continúa una transmisión previa.
-- `destination` es **opcional**. Un puente puede ignorarlo y resolver el
-  destino en el servidor a partir de `token`/`streamId` (recomendado: así la
-  clave de stream nunca pasa por el navegador).
+- `room` y `token` vienen del enlace de invitación; el puente los asocia a
+  sus destinos RTMPS. **El cliente nunca conoce URLs ni claves RTMPS.**
+- `name` y `title` identifican al participante (rótulos en la emisión).
 - Debe ser la primera trama. El cliente espera `welcome` durante 5 s; si no
   llega, cierra y reintenta.
 
@@ -175,8 +177,8 @@ corruptas.
 ## Seguridad
 
 - Solo `wss://` fuera de `localhost`.
-- `token` viaja dentro de HELLO (no en la URL, que suele acabar en logs).
-- Preferir destinos resueltos en el servidor sobre `destination` del cliente.
+- `token` viaja dentro de HELLO (no en la URL del WebSocket, que suele acabar en logs).
+- Los destinos RTMPS se resuelven solo en el puente.
 - El puente debe limitar tamaño de trama (el cliente nunca envía payloads
   > 16 MiB) y validar `Origin`.
 
