@@ -1,0 +1,14 @@
+# .gitignore — contenedores Podman/Docker (regla 12; plantilla .gitignore.container.tmpl)
+
+# Credenciales de registry
+.env
+*.secret
+
+# Imágenes exportadas (podman save / docker save)
+*.tar
+*.tar.gz
+
+# Cachés locales de build y volúmenes de desarrollo
+.build-cache/
+data/
+vol/

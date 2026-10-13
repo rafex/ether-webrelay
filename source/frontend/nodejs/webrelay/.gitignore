@@ -1,0 +1,31 @@
+# .gitignore — frontend Node.js (regla 12; plantilla .gitignore.nodejs.tmpl)
+# Patrones de build anclados a este proyecto: ./build/ contiene código fuente
+# (plugin de Pug para Vite), no artefactos.
+
+# Dependencias
+node_modules/
+
+# Build / distribución (Vite)
+/dist/
+/dist-ssr/
+
+# Cachés
+.vite/
+node_modules/.vite/
+.vitest/
+
+# Coverage y tests
+/coverage/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env (manejar con .env.example)
+.env
+.env.local
+.env.*.local
+*.local

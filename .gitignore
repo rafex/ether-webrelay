@@ -1,0 +1,88 @@
+# .gitignore — raíz del repositorio (regla 12)
+# Compuesto desde ether-rules: .gitignore.raiz + .secretos + .temporales + .mcp (adaptado).
+# Cada proyecto en source/<rol>/<lenguaje>/<proyecto>/ tiene su propio .gitignore.
+
+# ---------------------------------------------------------------------------
+# Raíz (.gitignore.raiz.tmpl)
+# ---------------------------------------------------------------------------
+
+# Generado por MkDocs (documentación)
+/site/
+
+# Meson/Ninja — anclado a la raíz: `build/` dentro de los proyectos es código
+# fuente (p. ej. source/frontend/nodejs/webrelay/build/vite-plugin-pug.ts)
+/builddir/
+/build/
+
+# Commitizen virtual environment (no trackeable)
+.githooks/.tools/.commitizen-venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+
+# ---------------------------------------------------------------------------
+# Secretos / credenciales (.gitignore.secretos.tmpl, regla 13)
+# ---------------------------------------------------------------------------
+
+# Variables de entorno con secretos
+.env
+.env.*
+!.env.example
+!.env.tmpl
+
+# Carpeta de variables de entorno — solo .env.example se versiona
+.enviroments/.env.*
+!.enviroments/.env.example
+
+# Secretos en plano (solo los *.enc.yaml cifrados con sops se versionan)
+.secrets/*.yaml
+.secrets/*.yml
+.secrets/*.json
+!.secrets/*.enc.yaml
+
+# Claves privadas y certificados
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.cer
+*.crt
+
+# ---------------------------------------------------------------------------
+# Temporales (.gitignore.temporales.tmpl)
+# ---------------------------------------------------------------------------
+
+*.bak
+*.orig
+*.tmp
+*.temp
+*.log
+# `*.lock` del template NO se aplica: los lockfiles se versionan (npm ci reproducible).
+
+# ---------------------------------------------------------------------------
+# Agentes de IA / MCP (.gitignore.mcp.tmpl, adaptado)
+# Se versionan los comandos y configuración compartida que instala SpecNative
+# (.claude/commands, .claude/skills, .codex/, codex.toml, opencode.json),
+# igual que en el resto de repositorios ether. Solo se ignora el estado local.
+# ---------------------------------------------------------------------------
+
+.claude/settings.local.json
+.claude/worktrees/
+.claude/launch.json
+.opencode/
+.cursor/
+.copilot/
+session-ses_*.md
+
+# SpecNative — venv generado
+.specnative/.venv/
