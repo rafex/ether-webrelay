@@ -120,7 +120,7 @@ build_image() {
 #  - deja fuera node_modules/dist del host (binarios nativos de otra plataforma).
 # Solo la caché de npm persiste entre ejecuciones (volumen con nombre).
 run_streamed() {
-	local image="$1" command="$2"
+	local image="$1" command="$2"; shift 2
 	COPYFILE_DISABLE=1 tar -C "$WORKSPACE" \
 		--exclude=node_modules --exclude=dist --exclude=coverage --exclude=site \
 		--exclude=test-results --exclude=playwright-report \
@@ -129,6 +129,7 @@ run_streamed() {
 		"$runtime" run --rm -i \
 			-v ether-webrelay-npm-cache:/root/.npm \
 			-e CI=true \
+			"$@" \
 			"$image" \
 			"mkdir -p /workspace && tar -xf - -C /workspace 2>/dev/null && cd /workspace && $command"
 }
@@ -147,7 +148,9 @@ case "$action" in
 	e2e-ci)
 		build_image "$e2e_containerfile" "$e2e_image"
 		log_info "Running containerized E2E (Playwright + dev bridge)"
-		run_streamed "$e2e_image" "cd $module && npm ci && npx playwright test"
+		# Red del host: WebRTC entre Chromium y el puente corre dentro del mismo contenedor y la
+		# red NAT/pasta de podman en runners Linux (GitHub Actions) rompía el ICE.
+		run_streamed "$e2e_image" "cd $module && npm ci && npx playwright test" --network host
 		;;
 	app-image)
 		build_image "$app_containerfile" "$app_image"
