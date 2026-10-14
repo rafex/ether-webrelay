@@ -13,9 +13,9 @@ antes de implementar.
 - **webrtc-lobby** (`SPEC-0002`): antesala, videollamada WebRTC, ajustes,
   efectos, grabación local, despliegue con config en runtime y E2E.
   Implementado; falta la prueba contra el puente real.
-- **Interoperabilidad con `ether-streaming-culerin`**: implementar allí la
-  señalización v2 (`docs/signaling.md`) y verificar con el E2E apuntando al
-  puente real (TASK-0011 de SPEC-0001, ahora sobre la señalización v2).
+- **Interoperabilidad con `ether-streaming-culerin`** (TASK-0110): el puente
+  real implementa la señalización v2 y el E2E pasa contra él
+  (`E2E_BRIDGE_URL`); falta ver la sala en un canal RTMPS real.
 
 ## Después
 
