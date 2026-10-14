@@ -5,7 +5,7 @@ artifact_type = "task_file"
 initiative    = "webrelay-mvp"
 spec_id       = "SPEC-0001"
 owner         = "rafex"
-state         = "in_progress"
+state         = "done"
 ```
 
 ## Tareas
