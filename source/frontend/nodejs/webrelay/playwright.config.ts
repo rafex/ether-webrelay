@@ -5,9 +5,21 @@ import { defineConfig } from '@playwright/test';
  * (tests/support/dev-bridge.mjs), with Chromium's fake camera/microphone.
  * PW_CHANNEL=chrome uses an installed Google Chrome; in the E2E container the
  * bundled Chromium is used.
+ *
+ * E2E_BRIDGE_URL=ws://host:port/signal runs the same scenarios against an
+ * already running bridge instead (e.g. ether-streaming-culerin in
+ * development mode); the dev bridge is then not started.
  */
 export const BRIDGE_PORT = 18090;
 export const APP_PORT = 15173;
+export const EXTERNAL_BRIDGE_URL = process.env.E2E_BRIDGE_URL;
+export const BRIDGE_URL = EXTERNAL_BRIDGE_URL ?? `ws://127.0.0.1:${BRIDGE_PORT}/signal`;
+
+const devBridge = {
+  command: `node tests/support/dev-bridge.mjs --port ${BRIDGE_PORT}`,
+  port: BRIDGE_PORT,
+  reuseExistingServer: false,
+};
 
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -33,11 +45,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   webServer: [
-    {
-      command: `node tests/support/dev-bridge.mjs --port ${BRIDGE_PORT}`,
-      port: BRIDGE_PORT,
-      reuseExistingServer: false,
-    },
+    ...(EXTERNAL_BRIDGE_URL ? [] : [devBridge]),
     {
       command: `npx vite --port ${APP_PORT} --strictPort`,
       url: `http://localhost:${APP_PORT}/config.json`,

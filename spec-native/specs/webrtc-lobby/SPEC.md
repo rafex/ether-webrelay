@@ -98,8 +98,9 @@ pueda cambiar dispositivos, efectos y vista sin conocimientos técnicos.
 
 ## Dependencias y riesgos
 
-- El puente real aún no existe: el contrato se valida con el puente de
-  desarrollo; riesgo de divergencia mitigado por CONV-0006 y el E2E.
+- El puente real (`ether-streaming-culerin`, Go + Pion) ya implementa el
+  contrato: el mismo E2E corre contra él con `E2E_BRIDGE_URL` (5/5); el
+  puente de desarrollo sigue siendo el doble por defecto.
 - Chromium headless en macOS no entrega audio del dispositivo falso: el E2E
   usa un micrófono sintético.
 

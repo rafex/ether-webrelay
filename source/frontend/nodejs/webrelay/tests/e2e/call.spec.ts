@@ -1,8 +1,8 @@
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
-import { BRIDGE_PORT } from '../../playwright.config';
+import { BRIDGE_URL } from '../../playwright.config';
 
 const CONFIG = {
-  bridgeUrl: `ws://127.0.0.1:${BRIDGE_PORT}/signal`,
+  bridgeUrl: BRIDGE_URL,
   transport: 'webrtc',
   defaultView: 'stage',
 };

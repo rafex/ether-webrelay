@@ -156,15 +156,17 @@ completion_evidence = ["commit 4077fe3", "make e2e: 5 passed (3 ejecuciones segu
 
 ### TASK-0110 - Interoperabilidad con ether-streaming-culerin
 
+> **Update 2026-10-14T01:21:44Z:** 2026-10-13: ether-streaming-culerin (Go + Pion + FFmpeg) implementa la señalización v2. E2E_BRIDGE_URL permite correr el E2E contra un puente externo; make e2e del puente: 5/5. Emisión verificada en RTMP local (MediaMTX). Falta verla en un canal RTMPS real (TASK-0009 del puente).
+
 ```toml
 id             = "TASK-0110"
 title          = "Interoperabilidad con ether-streaming-culerin"
-state          = "todo"
+state = "in_progress"
 priority       = "p0"
 owner          = "rafex"
 labels         = ["integration", "bridge"]
 dependencies   = ["TASK-0109"]
-expected_files = []
+expected_files = ["source/frontend/nodejs/webrelay/playwright.config.ts", "source/frontend/nodejs/webrelay/tests/e2e/call.spec.ts", "docs/running-frontend.md", "docs/man_e2e.md"]
 close_criteria = "El E2E pasa apuntando al puente real y la sala se ve en un canal RTMPS"
 validation     = ["make e2e con bridgeUrl del puente real", "prueba manual"]
 completion_evidence = []

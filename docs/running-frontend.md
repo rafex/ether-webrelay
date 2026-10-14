@@ -165,7 +165,23 @@ propio origen), `X-Content-Type-Options: nosniff` y
 
 ## 5. Conectar con el puente real
 
-1. El organizador genera el enlace `/join/<sala>?t=<token>` desde el puente.
+En local, con [`ether-streaming-culerin`](https://github.com/rafex/ether-streaming-culerin)
+clonado al lado (detén antes `just bridge-dev`: comparten el puerto 8090):
+
+```bash
+cd ../ether-streaming-culerin && just run   # puente real en modo desarrollo
+just dev                                    # en este repo
+```
+
+El `config.json` de desarrollo ya apunta a `ws://localhost:8090/signal`; en
+modo desarrollo el puente acepta `/join/demo?t=dev`. Con `just mediamtx` y
+`just demo --live` (en el repo del puente) la sala se emite a un RTMP local
+que se ve en `http://localhost:8888/live/demo`.
+
+En producción:
+
+1. El organizador genera el enlace `/join/<sala>?t=<token>` desde la consola
+   del puente (`/console/`) o su API.
 2. `bridgeUrl` (en `config.json` o `--bridge-url`) apunta a la señalización
    del puente (`wss://…`).
 3. El invitado abre el enlace, ajusta cámara, micrófono, altavoz y efectos en
@@ -185,6 +201,15 @@ cámara falsa de Chromium y micrófono sintético, y verifica lobby, llamada con
 video y audio reales a través del SFU, silencio, vistas, pantalla compartida y
 salida. Usa Google Chrome si está instalado; `make e2e-ci` corre lo mismo
 dentro de la imagen oficial de Playwright (lo que ejecuta GitHub Actions).
+
+Contra el puente real (sin arrancar el de desarrollo):
+
+```bash
+E2E_BRIDGE_URL=ws://127.0.0.1:18190/signal make e2e
+```
+
+El repositorio del puente lo automatiza: `make e2e` allí compila el puente,
+lo arranca en modo desarrollo y ejecuta estos mismos escenarios.
 
 ## Exponer fuera de localhost
 
