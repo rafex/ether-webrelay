@@ -5,7 +5,7 @@ artifact_type = "task_file"
 initiative    = "webrtc-lobby"
 spec_id       = "SPEC-0002"
 owner         = "rafex"
-state         = "in_progress"
+state         = "done"
 ```
 
 ## Tareas
@@ -161,7 +161,7 @@ completion_evidence = ["commit 4077fe3", "make e2e: 5 passed (3 ejecuciones segu
 ```toml
 id             = "TASK-0110"
 title          = "Interoperabilidad con ether-streaming-culerin"
-state = "in_progress"
+state = "done"
 priority       = "p0"
 owner          = "rafex"
 labels         = ["integration", "bridge"]
@@ -169,7 +169,7 @@ dependencies   = ["TASK-0109"]
 expected_files = ["source/frontend/nodejs/webrelay/playwright.config.ts", "source/frontend/nodejs/webrelay/tests/e2e/call.spec.ts", "docs/running-frontend.md", "docs/man_e2e.md"]
 close_criteria = "El E2E pasa apuntando al puente real y la sala se ve en un canal RTMPS"
 validation     = ["make e2e con bridgeUrl del puente real", "prueba manual"]
-completion_evidence = []
+completion_evidence = ["El usuario confirmó el 2026-10-14 que la sala salió al aire a YouTube desde la consola del puente (tras el E2E 5/5 y la emisión a MediaMTX). Además, el despliegue en k3s Server 2 se verificó en producción: HTTPS, wss y llamada WebRTC real entre dos invitados por UDP 30443."]
 ```
 
 Depende de que `ether-streaming-culerin` implemente `docs/signaling.md`.

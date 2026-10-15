@@ -10,12 +10,7 @@ antes de implementar.
 
 ## Ahora
 
-- **webrtc-lobby** (`SPEC-0002`): antesala, videollamada WebRTC, ajustes,
-  efectos, grabación local, despliegue con config en runtime y E2E.
-  Implementado; falta la prueba contra el puente real.
-- **Interoperabilidad con `ether-streaming-culerin`** (TASK-0110): el puente
-  real implementa la señalización v2 y el E2E pasa contra él
-  (`E2E_BRIDGE_URL`); falta ver la sala en un canal RTMPS real.
+- **webrtc-lobby** (`SPEC-0002`) e interoperabilidad con `ether-streaming-culerin` (TASK-0110): cerradas el 2026-10-14; desplegado en k3s Server 2 (`streaming.rafex.app`).
 
 ## Después
 

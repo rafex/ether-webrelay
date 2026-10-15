@@ -211,6 +211,14 @@ E2E_BRIDGE_URL=ws://127.0.0.1:18190/signal make e2e
 El repositorio del puente lo automatiza: `make e2e` allí compila el puente,
 lo arranca en modo desarrollo y ejecuta estos mismos escenarios.
 
+## En k3s (Server 2) — `streaming.rafex.app`
+
+El frontend y el puente se despliegan con Flux desde
+[`rafex/ether-streaming-gitops`](https://github.com/rafex/ether-streaming-gitops): imagen
+`ghcr.io/rafex/ether-webrelay` (`build-N`, publicada por `.github/workflows/publish-image.yml`), nginx sin
+privilegios y `config.json` generado desde `WEBRELAY_*` con `WEBRELAY_BRIDGE_URL=wss://streaming.rafex.app/signal`.
+TLS lo termina el HAProxy del host (`k3s-haproxy-setup`); la señalización va por el mismo host en `/signal`.
+
 ## Exponer fuera de localhost
 
 El contenedor solo escucha en loopback a propósito. Para servirlo en red, pon
