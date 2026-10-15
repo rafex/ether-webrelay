@@ -1,0 +1,20 @@
+# Actualizaciones de dependencias y de acciones de GitHub como PR semanales.
+# Las acciones están fijadas a una versión exacta: Dependabot propone la nueva.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /source/frontend/nodejs/webrelay
+    schedule: {interval: weekly}
+    open-pull-requests-limit: 5
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: {interval: weekly}
+  - package-ecosystem: docker
+    directory: /containers/frontend
+    schedule: {interval: weekly}
+  - package-ecosystem: docker
+    directory: /containers/ci
+    schedule: {interval: weekly}
+  - package-ecosystem: docker
+    directory: /containers/e2e
+    schedule: {interval: weekly}
