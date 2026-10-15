@@ -19,5 +19,6 @@ servidor propio). El cliente nunca conoce RTMPS.
 - [Guía de inicio](getting-started.md) — requisitos y primeros pasos.
 - [Levantar el frontend](running-frontend.md) — desarrollo, preview, contenedor, TLS y solución de problemas.
 - [Arquitectura](architecture.md) — hexágono, flujo de medios, estados.
+- [Flujo de medios](media-flow.md) — quién envía el video del cliente al puente y cómo (WebRTC, perfiles, diagnóstico).
 - [Señalización v2](signaling.md) — contrato WebRTC con el puente.
 - [Protocolo binario v1](protocol-websocket.md) — modo alternativo "solo emisor".
