@@ -79,6 +79,31 @@ test.describe('lobby', () => {
     await expect(page.locator('#join-button')).toBeDisabled();
   });
 
+  test('keeps the invitation token out of the address bar but survives a reload', async ({
+    context,
+    browser,
+  }) => {
+    const page = await participant(context);
+    await openLobby(page, 'e2e-token', 'secret-token');
+    // The token is a credential: it must not stay in the URL (history, bookmarks, shared screens).
+    await expect.poll(() => new URL(page.url()).search).toBe('');
+    expect(page.url()).not.toContain('secret-token');
+    expect(new URL(page.url()).pathname).toBe('/join/e2e-token');
+
+    // Reloading the tab re-reads it from sessionStorage.
+    await page.reload();
+    await expect(page.locator('#room-title')).toHaveText('Sala de pruebas · e2e-token');
+    await expect.poll(() => new URL(page.url()).search).toBe('');
+
+    // Another browser context has no memory of it: the plain link is not enough.
+    const fresh = await browser.newContext();
+    const other = await fresh.newPage();
+    await other.route('**/config.json', (route) => route.fulfill({ json: CONFIG }));
+    await other.goto(`${new URL(page.url()).origin}/join/e2e-token`);
+    await expect(other.locator('[data-screen="invalid"]')).toBeVisible();
+    await fresh.close();
+  });
+
   test('shows the room, a live camera preview and the channels', async ({ context }) => {
     const page = await participant(context);
     await openLobby(page, 'e2e-lobby');

@@ -177,6 +177,16 @@ porque ese valor acaba dentro de una cabecera. Sin `WEBRELAY_BRIDGE_URL` (imagen
 sin configurar, desarrollo local) se usa una CSP permisiva para `localhost`.
 `form-action 'none'` y `frame-ancestors 'none'` están siempre.
 
+**El token de invitación es una credencial.** Tras leerlo, la app lo quita de la
+barra de direcciones (`history.replaceState`) y lo guarda solo en el
+`sessionStorage` de esa pestaña, de modo que no queda en el historial ni se ve
+al compartir pantalla, y recargar sigue funcionando; al cerrar la pestaña se
+olvida. Si el navegador no deja escribir en `sessionStorage` (ventanas privadas),
+el token se queda en la URL. El access log de nginx registra `$uri` (sin
+query), así que tampoco llega a `kubectl logs`. El build **no genera source
+maps** (se publicarían junto al bundle con todo el código fuente) y nginx
+responde 404 a cualquier `*.map`.
+
 El modelo de segmentación se descarga por defecto de
 `storage.googleapis.com`; para no depender de ese origen (privacidad del
 visitante, cadena de suministro) sírvelo desde el propio sitio con
