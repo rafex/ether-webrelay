@@ -18,6 +18,7 @@ nav:
   - Guía de inicio: getting-started.md
   - Levantar el frontend: running-frontend.md
   - Arquitectura: architecture.md
+  - Flujo de medios (cliente → puente): media-flow.md
   - Señalización v2 (WebRTC): signaling.md
   - Protocolo binario v1 (websocket): protocol-websocket.md
   - Manuales de tareas:
