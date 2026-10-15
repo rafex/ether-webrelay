@@ -103,6 +103,8 @@ export type ServerMessage =
       readonly type: 'welcome';
       readonly self: string;
       readonly resumed: boolean;
+      /** Secret that proves ownership of `self` when resuming after a dropped socket. */
+      readonly resumeToken?: string;
       readonly profile?: QualityProfile;
       readonly iceServers: readonly IceServerConfig[];
       readonly participants: readonly ParticipantInfo[];
@@ -139,6 +141,11 @@ export function parseServerMessage(text: string): ServerMessage {
         type: 'welcome',
         self: requireString(msg, 'self'),
         resumed: msg.resumed === true,
+        ...(typeof msg.resumeToken === 'string' &&
+        msg.resumeToken.length > 0 &&
+        msg.resumeToken.length <= 256
+          ? { resumeToken: msg.resumeToken }
+          : {}),
         ...(profile ? { profile } : {}),
         iceServers: requireArray(msg, 'iceServers', parseIceServer, true),
         participants: requireArray(msg, 'participants', parseParticipant, true),
