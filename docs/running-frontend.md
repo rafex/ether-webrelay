@@ -187,113 +187,13 @@ query), así que tampoco llega a `kubectl logs`. El build **no genera source
 maps** (se publicarían junto al bundle con todo el código fuente) y nginx
 responde 404 a cualquier `*.map`.
 
-El modelo de segmentación se descarga por defecto de
-`storage.googleapis.com`; para no depender de ese origen (privacidad del
-visitante, cadena de suministro) sírvelo desde el propio sitio con
-`WEBRELAY_EFFECTS_MODEL_URL=/models/…` y desaparece de `connect-src`.
-
-## 5. Conectar con el puente real
-
-En local, con [`ether-streaming-culerin`](https://github.com/rafex/ether-streaming-culerin)
-clonado al lado (detén antes `just bridge-dev`: comparten el puerto 8090):
-
-```bash
-cd ../ether-streaming-culerin && just run   # puente real en modo desarrollo
-just dev                                    # en este repo
-```
-
-El `config.json` de desarrollo ya apunta a `ws://localhost:8090/signal`; en
-modo desarrollo el puente acepta `/join/demo?t=dev`. Con `just mediamtx` y
-`just demo --live` (en el repo del puente) la sala se emite a un RTMP local
-que se ve en `http://localhost:8888/live/demo`.
-
-En producción:
-
-1. El organizador genera el enlace `/join/<sala>?t=<token>` desde la consola
-   del puente (`/console/`) o su API.
-2. `bridgeUrl` (en `config.json` o `--bridge-url`) apunta a la señalización
-   del puente (`wss://…`).
-3. El invitado abre el enlace, ajusta cámara, micrófono, altavoz y efectos en
-   el lobby, escribe su nombre y pulsa **Entrar como invitado**.
-
-Salir al aire y la composición final los controla el anfitrión desde el
-puente; el cliente solo muestra "En la sala" / "Reconectando".
-
-## 6. Pruebas de navegador (E2E)
-
-```bash
-make e2e
-```
-
-Playwright levanta el puente de desarrollo y Vite, abre dos participantes con
-cámara falsa de Chromium y micrófono sintético, y verifica lobby, llamada con
-video y audio reales a través del SFU, silencio, vistas, pantalla compartida y
-salida. Usa Google Chrome si está instalado; `make e2e-ci` corre lo mismo
-dentro de la imagen oficial de Playwright (lo que ejecuta GitHub Actions).
-
-Contra el puente real (sin arrancar el de desarrollo):
-
-```bash
-E2E_BRIDGE_URL=ws://127.0.0.1:18190/signal make e2e
-```
-
-El repositorio del puente lo automatiza: `make e2e` allí compila el puente,
-lo arranca en modo desarrollo y ejecuta estos mismos escenarios.
-
-## En k3s (Server 2) — `streaming.rafex.app`
-
-El frontend y el puente se despliegan con Flux desde
-[`rafex/ether-streaming-gitops`](https://github.com/rafex/ether-streaming-gitops): imagen
-`ghcr.io/rafex/ether-webrelay` (`build-N`, publicada por `.github/workflows/publish-image.yml`), nginx sin
-privilegios y `config.json` generado desde `WEBRELAY_*` con `WEBRELAY_BRIDGE_URL=wss://streaming.rafex.app/signal`.
-TLS lo termina el HAProxy del host (`k3s-haproxy-setup`); la señalización va por el mismo host en `/signal`.
-
-## Exponer fuera de localhost
-
-El contenedor solo escucha en loopback a propósito. Para servirlo en red, pon
-un proxy con TLS **en el mismo host**. Ejemplo con Caddy (certificado
-automático):
-
-```bash
-caddy reverse-proxy --from webrelay.example.com --to localhost:8080
-```
-
-Equivalente en nginx (con tus certificados):
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name webrelay.example.com;
-    ssl_certificate     /etc/ssl/webrelay.crt;
-    ssl_certificate_key /etc/ssl/webrelay.key;
-    location / { proxy_pass http://127.0.0.1:8080; }
-}
-```
-
-Con el sitio en HTTPS, el puente debe ser `wss://`: los navegadores bloquean
-`ws://` desde páginas seguras (y la CSP solo permite `ws://` hacia localhost).
-
-## Solución de problemas
-
-| Síntoma | Causa | Solución |
-|---------|-------|----------|
-| `bind: address already in use` en `just up` | El puerto 8080 está ocupado | `just up --port 8091` (o libera el puerto) |
-| `Port 5173 is in use` en `just dev` | Vite usa `strictPort` | `just dev --port 3000` |
-| "Esta página debe servirse por HTTPS…" | Se abrió por IP o nombre sin TLS | Usa `localhost` o pon un proxy TLS |
-| "Enlace no válido" | Falta `/join/<sala>` o `?t=` | Usa el enlace completo del anfitrión |
-| "No se pudo cargar la configuración del sitio" | `config.json` ausente o inválido | Revisa `public/config.json` o las variables `WEBRELAY_*` |
-| El lobby se queda en "Conectando con la sala…" | El puente no responde en `bridgeUrl` | Arranca `just bridge-dev` o corrige `bridgeUrl` |
-| "Este navegador no tiene las APIs necesarias: …" | Sin WebRTC (o sin WebCodecs en modo websocket) | Actualiza el navegador |
-| "Se denegó el permiso para usar la cámara." | Permiso rechazado | Permite cámara/micrófono/pantalla en la configuración del sitio |
-| "Los efectos no están disponibles: …" | El modelo de MediaPipe no cargó | Revisa la red o autoaloja el modelo (`effectsModelUrl`) |
-| No aparece la opción de audio del sistema | Depende del navegador y del SO | Comparte una **pestaña** en Chromium, o desactiva "Audio del sistema" |
-| El puente no conecta (`ws://192.168…`) | La CSP solo permite `ws://` a localhost | Usa `wss://` o `ws://localhost` |
-| El contenedor no arranca: `WEBRELAY_BRIDGE_URL … valid host[:port]` | La URL no es `wss://`/`ws://`/`https://` con host válido | Corrige la variable (sin comillas ni espacios) |
-| `No container runtime found` | Ni podman ni docker | Instala podman |
-| Pantalla negra en la vista previa | Fuente aún sin frames o pestaña compartida cerrada | Espera un segundo; si cerraste la compartición, la sesión se detiene |
-
-Cada helper deja un log de auditoría en `/var/log/ether-webrelay/` o, si no
-hay permisos, en `/tmp/ether-webrelay/`.
+El modelo de segmentación de los efectos (MediaPipe, 250 KB) **viene dentro de la imagen** y se
+sirve desde `/models/selfie_segmenter.tflite`: la CSP generada al arrancar no incluye ningún
+origen de terceros y la página no le cuenta a Google quién entra. El `Containerfile` lo descarga al
+construir y comprueba su SHA-256 (`EFFECTS_MODEL_SHA256`): la URL pública «latest» es mutable, y si
+cambiara el build falla en lugar de enviar un modelo distinto. Para actualizarlo, descarga el nuevo,
+prueba los efectos en el lobby y cambia el hash. Sin la imagen (desarrollo con `just dev`) el cliente
+usa la URL pública de Google, como siempre.
 
 ## Dependencias
 

@@ -18,6 +18,17 @@ RUN npm ci --no-audit --no-fund
 COPY ${MODULE}/ ./
 RUN npm run build
 
+# Modelo de segmentación de los efectos (MediaPipe, Apache-2.0): se empaqueta en la imagen y se sirve
+# desde el propio origen, así la página no depende de storage.googleapis.com (ni le cuenta a Google
+# quién entra) y la CSP no necesita ese origen. El hash fija el contenido: la URL «latest» es
+# mutable, y si Google la cambiara el build falla en lugar de enviar un modelo distinto.
+# Para actualizarlo: descarga el nuevo, revisa que funciona (efectos en el lobby) y cambia el hash.
+ARG EFFECTS_MODEL_URL=https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite
+ARG EFFECTS_MODEL_SHA256=191ac9529ae506ee0beefa6b2c945a172dab9d07d1e802a290a4e4038226658b
+RUN mkdir -p dist/models \
+	&& wget -q -O dist/models/selfie_segmenter.tflite "$EFFECTS_MODEL_URL" \
+	&& echo "$EFFECTS_MODEL_SHA256  dist/models/selfie_segmenter.tflite" | sha256sum -c -
+
 FROM docker.io/nginxinc/nginx-unprivileged:1.29-alpine@sha256:0c79d56aee561a1d81c63f00eee5fb5fe29279560cdc55e91425133104c7fbe6
 # La base de nginx se publica de vez en cuando: `apk upgrade` trae los parches de Alpine posteriores
 # (util-linux, libxml2, pcre2, tiff…). `make scan` falla si queda algo corregible. Luego, sin privilegios.
@@ -29,5 +40,8 @@ COPY containers/frontend/security-headers.conf /etc/nginx/webrelay/security-head
 COPY --chmod=0755 containers/frontend/40-webrelay-config.sh /docker-entrypoint.d/40-webrelay-config.sh
 # The unprivileged nginx user must be able to (re)write config.json at start.
 COPY --from=build --chown=101:0 /app/dist /usr/share/nginx/html
+# El modelo de efectos viene en la imagen (/models/…): la CSP generada al arrancar no incluye ningún
+# origen de terceros. Sin esta variable el cliente usaría la URL pública de Google.
+ENV WEBRELAY_EFFECTS_MODEL_URL=/models/selfie_segmenter.tflite
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s CMD wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1
