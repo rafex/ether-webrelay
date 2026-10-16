@@ -158,10 +158,29 @@ variables (sin `WEBRELAY_BRIDGE_URL` se usa el `config.json` empaquetado):
 | `/assets/*` | JS/CSS/wasm con hash en el nombre, caché inmutable de 1 año |
 | `/healthz` | `200 ok` (sin log de acceso) |
 
-Cabeceras de seguridad: `Content-Security-Policy`, `Permissions-Policy`
-(cámara, micrófono, captura de pantalla y selección de altavoz solo para el
-propio origen), `X-Content-Type-Options: nosniff` y
-`Referrer-Policy: no-referrer`.
+Cabeceras de seguridad (en todas las respuestas, ver
+`containers/frontend/security-headers.conf`): `Permissions-Policy` (cámara,
+micrófono, captura de pantalla y selección de altavoz solo para el propio
+origen; geolocalización, pagos, USB, serie y Bluetooth denegados),
+`Strict-Transport-Security` (1 año, `includeSubDomains`, sin `preload`),
+`X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`,
+`X-Frame-Options: DENY` y `Cross-Origin-Opener/Resource-Policy: same-origin`.
+Solo se aceptan `GET` y `HEAD`.
+
+**Content-Security-Policy** (en `/` y `/assets/*`): la genera
+`40-webrelay-config.sh` al arrancar. Con `WEBRELAY_BRIDGE_URL` configurado,
+`connect-src` se limita a `'self'`, el origen del puente (y el de
+`WEBRELAY_RELAY_URL` si es otro), el del modelo de efectos y `blob:`; no hay
+`wss:` genérico ni `ws://localhost`. Si una URL no es un origen válido
+(`wss://`, `ws://` o `https://` con host[:puerto]) el contenedor **no arranca**,
+porque ese valor acaba dentro de una cabecera. Sin `WEBRELAY_BRIDGE_URL` (imagen
+sin configurar, desarrollo local) se usa una CSP permisiva para `localhost`.
+`form-action 'none'` y `frame-ancestors 'none'` están siempre.
+
+El modelo de segmentación se descarga por defecto de
+`storage.googleapis.com`; para no depender de ese origen (privacidad del
+visitante, cadena de suministro) sírvelo desde el propio sitio con
+`WEBRELAY_EFFECTS_MODEL_URL=/models/…` y desaparece de `connect-src`.
 
 ## 5. Conectar con el puente real
 
@@ -259,6 +278,7 @@ Con el sitio en HTTPS, el puente debe ser `wss://`: los navegadores bloquean
 | "Los efectos no están disponibles: …" | El modelo de MediaPipe no cargó | Revisa la red o autoaloja el modelo (`effectsModelUrl`) |
 | No aparece la opción de audio del sistema | Depende del navegador y del SO | Comparte una **pestaña** en Chromium, o desactiva "Audio del sistema" |
 | El puente no conecta (`ws://192.168…`) | La CSP solo permite `ws://` a localhost | Usa `wss://` o `ws://localhost` |
+| El contenedor no arranca: `WEBRELAY_BRIDGE_URL … valid host[:port]` | La URL no es `wss://`/`ws://`/`https://` con host válido | Corrige la variable (sin comillas ni espacios) |
 | `No container runtime found` | Ni podman ni docker | Instala podman |
 | Pantalla negra en la vista previa | Fuente aún sin frames o pestaña compartida cerrada | Espera un segundo; si cerraste la compartición, la sesión se detiene |
 
