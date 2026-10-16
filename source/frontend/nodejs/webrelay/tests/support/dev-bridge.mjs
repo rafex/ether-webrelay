@@ -8,6 +8,7 @@
 //
 // Test hooks: token "invalid" → fatal invalid-token; room "closed" → room-not-found.
 
+import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { MediaStreamTrack, RTCPeerConnection, RTCRtpCodecParameters } from 'werift';
 import { WebSocketServer } from 'ws';
@@ -147,7 +148,10 @@ export async function startDevBridge({ port = 8090, host = '127.0.0.1', log = ()
       send({ type: 'error', code: 'room-not-found', message: 'peek first', fatal: true });
       return;
     }
-    const resumed = message.resume ? room.participants.get(message.resume) : undefined;
+    // Like the real bridge: the (public, sequential) id is not enough to resume.
+    const candidate = message.resume ? room.participants.get(message.resume) : undefined;
+    const resumed =
+      candidate && candidate.resumeToken === message.resumeToken ? candidate : undefined;
     if (resumed) {
       resumed.send = send;
       session.participant = resumed;
@@ -155,6 +159,7 @@ export async function startDevBridge({ port = 8090, host = '127.0.0.1', log = ()
         type: 'welcome',
         self: resumed.info.id,
         resumed: true,
+        resumeToken: resumed.resumeToken,
         profile: PROFILE,
         iceServers: [],
         participants: [...room.participants.values()].map((p) => p.info),
@@ -172,6 +177,7 @@ export async function startDevBridge({ port = 8090, host = '127.0.0.1', log = ()
         screenSharing: false,
       },
       send,
+      resumeToken: randomUUID(),
       publishPc: undefined,
       subscribePc: undefined,
       /** source -> { track, receiverPli } published by this participant */
@@ -189,6 +195,7 @@ export async function startDevBridge({ port = 8090, host = '127.0.0.1', log = ()
       type: 'welcome',
       self: id,
       resumed: false,
+      resumeToken: participant.resumeToken,
       profile: PROFILE,
       iceServers: [],
       participants: [...room.participants.values()].map((p) => p.info),

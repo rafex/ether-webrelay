@@ -314,6 +314,19 @@ describe('WebRtcCallSession — resilience', () => {
     expect(h.call.snapshot.state).toBe('connected');
   });
 
+  it('proves ownership with the resume token the bridge handed out', async () => {
+    const h = await setup();
+    const admitted = h.call.join();
+    await h.receive({ ...WELCOME, resumeToken: 'secret-token' } as ServerMessage);
+    await admitted;
+    h.conn().drop();
+    await h.clock.advance(100);
+    expect(h.conn().ofType('join')[0]).toMatchObject({
+      resume: 'p-me',
+      resumeToken: 'secret-token',
+    });
+  });
+
   it('rebuilds peers when the bridge could not resume', async () => {
     const h = await joined();
     const oldPublish = h.peers.publish;

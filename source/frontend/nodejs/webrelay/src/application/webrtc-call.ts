@@ -67,6 +67,8 @@ const SLOT_SOURCES: Record<LocalSlot, MediaSource> = {
 export class WebRtcCallSession implements CallController {
   private state: CallState = 'joining';
   private room: RoomState = EMPTY_ROOM;
+  /** Proves ownership of `room.self` when the signaling socket is re-established. */
+  private resumeToken: string | undefined;
   private profile: QualityProfile;
   private iceServers: readonly IceServerConfig[] = [];
   private publishPc: PeerConnectionLike | undefined;
@@ -216,7 +218,8 @@ export class WebRtcCallSession implements CallController {
       name: this.deps.identity.name,
       ...(this.deps.identity.title ? { title: this.deps.identity.title } : {}),
       media: { audio: Boolean(this.local.microphone), video: Boolean(this.local.camera) },
-      ...(resume ? { resume } : {}),
+      // The id alone is public; the bridge only resumes it when the secret matches.
+      ...(resume ? { resume, ...(this.resumeToken ? { resumeToken: this.resumeToken } : {}) } : {}),
     });
   }
 
@@ -276,6 +279,7 @@ export class WebRtcCallSession implements CallController {
 
   private async onWelcome(message: Extract<ServerMessage, { type: 'welcome' }>): Promise<void> {
     this.room = reduceRoom(this.room, message);
+    this.resumeToken = message.resumeToken;
     this.profile = message.profile ?? this.deps.defaultProfile;
     this.iceServers = message.iceServers;
     if (!message.resumed || !this.publishPc) await this.setupPeers();

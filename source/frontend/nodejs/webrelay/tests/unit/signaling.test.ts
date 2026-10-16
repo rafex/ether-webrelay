@@ -47,6 +47,21 @@ describe('parseServerMessage', () => {
     });
   });
 
+  it('keeps the resume token of a welcome and ignores an unusable one', () => {
+    const base = {
+      type: 'welcome',
+      self: 'p-me',
+      resumed: false,
+      iceServers: [],
+      participants: [],
+    };
+    expect(parse({ ...base, resumeToken: 'secret' })).toMatchObject({ resumeToken: 'secret' });
+    for (const bad of ['', 'x'.repeat(257), 7, null]) {
+      expect(parse({ ...base, resumeToken: bad })).not.toHaveProperty('resumeToken');
+    }
+    expect(parse(base)).not.toHaveProperty('resumeToken');
+  });
+
   it('parses welcome with profile, ICE servers and participants', () => {
     const message = parse({
       type: 'welcome',

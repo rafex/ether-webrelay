@@ -76,7 +76,7 @@ sequenceDiagram
 | `type` | Campos | Cuándo |
 |--------|--------|--------|
 | `room.peek` | `room`, `token` | Al abrir el lobby (y al reconectar antes de entrar) |
-| `join` | `name` (≤ 60), `title?` (≤ 80), `media: {audio, video}`, `resume?` (id previo) | Al pulsar "Entrar"; con `resume` tras una caída del WebSocket |
+| `join` | `name` (≤ 60), `title?` (≤ 80), `media: {audio, video}`, `resume?` (id previo), `resumeToken?` (secreto del `welcome`) | Al pulsar "Entrar"; con `resume` + `resumeToken` tras una caída del WebSocket |
 | `publish.offer` | `sdp`, `sources: {mid: "camera" \| "microphone" \| "screen" \| "screen-audio"}` | Oferta inicial y renegociaciones (nuevas pistas, ICE restart) |
 | `subscribe.answer` | `sdp` | Respuesta a cada `subscribe.offer` |
 | `ice` | `pc: "publish" \| "subscribe"`, `candidate: {candidate, sdpMid, sdpMLineIndex}` | Trickle ICE |
@@ -92,7 +92,7 @@ pantalla (no se puede deducir del tipo de medio).
 | `type` | Campos | Efecto en el cliente |
 |--------|--------|----------------------|
 | `room.info` | `room`, `title`, `host: {name, avatar?}`, `channels: string[]`, `transport?: "webrtc" \| "websocket"` | Pinta el lobby; `channels` es informativo (youtube, twitch, facebook…); `transport` sobrescribe el de `config.json` |
-| `welcome` | `self`, `resumed`, `profile?`, `iceServers[]`, `participants[]` | Admite al participante; crea las conexiones (o las conserva si `resumed`) |
+| `welcome` | `self`, `resumed`, `resumeToken`, `profile?`, `iceServers[]`, `participants[]` | Admite al participante; crea las conexiones (o las conserva si `resumed`); guarda `resumeToken` para reanudar |
 | `publish.answer` | `sdp` | Completa la negociación de `publish` |
 | `subscribe.offer` | `sdp` | El cliente responde con `subscribe.answer` |
 | `ice` | `pc`, `candidate` | Se aplica (o se encola hasta tener descripción remota) |
@@ -132,10 +132,11 @@ siempre acotada por el perfil.
    (0.5 → 10 s, ±20 % jitter, 20 intentos); también si no recibe nada durante
    3 heartbeats.
 2. En el lobby reenvía `room.peek`; en la llamada reenvía `join` con
-   `resume: <self>`.
-3. Si el puente conserva la sesión responde `welcome {resumed: true}` y el
-   cliente mantiene sus conexiones WebRTC; si no, el cliente las recrea y
-   vuelve a publicar.
+   `resume: <self>` y `resumeToken: <el recibido en welcome>`.
+3. Si el puente conserva la sesión (y el token coincide) responde `welcome
+   {resumed: true}` y el cliente mantiene sus conexiones WebRTC; si no, admite
+   al cliente como invitado nuevo (`resumed: false`, otro `self` y otro
+   `resumeToken`) y el cliente recrea las conexiones y vuelve a publicar.
 4. **Medios caídos** (`publish` en estado `failed`): el cliente hace ICE
    restart con una nueva `publish.offer`. Para `subscribe` es el puente quien
    debe ofrecer de nuevo.
@@ -147,6 +148,10 @@ siempre acotada por el perfil.
 - El puente valida `Origin`, el token y límites de tamaño de mensaje.
 - Los avatares solo se aceptan como URL `http(s)`.
 - El cliente nunca recibe ni envía destinos o claves RTMPS.
+- Los ids de participante (`p-1`, `p-2`…) son secuenciales y públicos para toda
+  la sala: **no autentican**. Reanudar una sesión exige el `resumeToken`
+  (128 bits aleatorios) que solo recibió su dueño en `welcome`; sin él, el
+  puente ignora `resume` y no toca la sesión ajena.
 
 ## Modo alternativo `websocket`
 
