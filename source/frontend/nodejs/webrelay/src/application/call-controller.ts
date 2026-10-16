@@ -26,7 +26,8 @@ export interface LocalMediaProvider {
   }): Promise<ScreenHandles>;
 }
 
-export type CallState = 'joining' | 'connected' | 'reconnecting' | 'left' | 'failed';
+/** `waiting`: the room asks for the host's approval and this guest has no seat yet. */
+export type CallState = 'joining' | 'waiting' | 'connected' | 'reconnecting' | 'left' | 'failed';
 
 export interface ParticipantMedia {
   readonly camera?: MediaTrackLike;

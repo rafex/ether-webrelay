@@ -33,6 +33,7 @@ interface TileModel {
 
 const STATE_LABELS: Record<CallState, string> = {
   joining: 'Entrando',
+  waiting: 'Esperando admisión',
   connected: 'En la sala',
   reconnecting: 'Reconectando',
   left: 'Fuera',
@@ -129,6 +130,7 @@ export class CallView {
     }
     byId('call-mode-note').hidden = snapshot.mode !== 'websocket';
     if (state !== this.lastState) {
+      if (state === 'waiting') toast('El anfitrión tiene que admitirte. Espera un momento…');
       if (state === 'reconnecting') toast('Se perdió la conexión. Reconectando…');
       if (state === 'connected' && this.lastState === 'reconnecting') toast('Conexión recuperada.');
       this.lastState = state;

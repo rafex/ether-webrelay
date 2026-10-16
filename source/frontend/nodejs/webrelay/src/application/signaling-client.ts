@@ -217,6 +217,7 @@ const BRIDGE_ERRORS: Record<string, string> = {
   'room-closed': 'La sala se ha cerrado.',
   'room-full': 'La sala está llena.',
   kicked: 'El anfitrión te ha retirado de la sala.',
+  denied: 'El anfitrión no te ha admitido en la sala.',
 };
 
 export function describeBridgeError(code: string, message: string): string {

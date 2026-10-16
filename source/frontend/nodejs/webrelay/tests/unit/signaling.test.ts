@@ -47,6 +47,14 @@ describe('parseServerMessage', () => {
     });
   });
 
+  it('parses the waiting-room messages', () => {
+    expect(parse({ type: 'waiting' })).toEqual({ type: 'waiting' });
+    expect(parse({ type: 'admitted', token: 'tok' })).toEqual({ type: 'admitted', token: 'tok' });
+    for (const bad of [{}, { token: '' }, { token: 7 }, { token: 'x'.repeat(257) }]) {
+      expect(() => parse({ type: 'admitted', ...bad })).toThrow();
+    }
+  });
+
   it('keeps the resume token of a welcome and ignores an unusable one', () => {
     const base = {
       type: 'welcome',

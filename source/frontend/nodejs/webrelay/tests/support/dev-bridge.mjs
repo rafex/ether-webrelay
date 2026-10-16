@@ -148,6 +148,32 @@ export async function startDevBridge({ port = 8090, host = '127.0.0.1', log = ()
       send({ type: 'error', code: 'room-not-found', message: 'peek first', fatal: true });
       return;
     }
+    // Rooms named `wait-…` / `deny-…` mimic an approval room whose host answers after a
+    // moment (the real bridge waits for the console): admit, or turn the guest away.
+    const approval = /^(wait|deny)-/.exec(room.id)?.[1];
+    if (approval && !message.resume) {
+      if (message.admit) {
+        if (session.admitToken !== message.admit) {
+          send({ type: 'error', code: 'denied', message: 'invalid admission', fatal: true });
+          return;
+        }
+        session.admitToken = undefined; // single use; falls through to a normal join
+      } else if (!session.waiting) {
+        session.waiting = true;
+        send({ type: 'waiting' });
+        setTimeout(() => {
+          if (approval === 'deny') {
+            send({ type: 'error', code: 'denied', message: 'no', fatal: true });
+            return;
+          }
+          session.admitToken = randomUUID();
+          send({ type: 'admitted', token: session.admitToken });
+        }, 400);
+        return;
+      } else {
+        return; // already waiting
+      }
+    }
     // Like the real bridge: the (public, sequential) id is not enough to resume.
     const candidate = message.resume ? room.participants.get(message.resume) : undefined;
     const resumed =

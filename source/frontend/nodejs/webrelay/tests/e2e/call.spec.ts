@@ -126,6 +126,27 @@ test.describe('lobby', () => {
   });
 });
 
+test.describe('waiting room', () => {
+  test('a guest waits for the host, then is admitted and joins', async ({ context }) => {
+    const page = await participant(context);
+    await openLobby(page, 'wait-e2e');
+    await page.locator('#join-name').fill('Ana');
+    await page.locator('#join-button').click();
+    await expect(page.locator('#call-badge')).toHaveText('Esperando admisión');
+    // The dev bridge "host" admits after a moment: the guest ends up in the room.
+    await expect(page.locator('#call-badge')).toHaveText('En la sala');
+  });
+
+  test('a guest the host turns away sees why', async ({ context }) => {
+    const page = await participant(context);
+    await openLobby(page, 'deny-e2e');
+    await page.locator('#join-name').fill('Ana');
+    await page.locator('#join-button').click();
+    await expect(page.locator('[data-screen="left"]')).toBeVisible();
+    await expect(page.locator('#left-message')).toContainText('no te ha admitido');
+  });
+});
+
 test.describe('call', () => {
   test('two participants see and hear each other through the bridge', async ({ browser }) => {
     const contextA = await browser.newContext();

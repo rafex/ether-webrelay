@@ -212,7 +212,7 @@ export class WebRtcCallSession implements CallController {
 
   // ------------------------------------------------------------- signaling
 
-  private sendJoin(resume: string | undefined): void {
+  private sendJoin(resume: string | undefined, admit?: string): void {
     this.deps.client.send({
       type: 'join',
       name: this.deps.identity.name,
@@ -220,6 +220,8 @@ export class WebRtcCallSession implements CallController {
       media: { audio: Boolean(this.local.microphone), video: Boolean(this.local.camera) },
       // The id alone is public; the bridge only resumes it when the secret matches.
       ...(resume ? { resume, ...(this.resumeToken ? { resumeToken: this.resumeToken } : {}) } : {}),
+      // One-time key the host's approval gave this socket (see `admitted`).
+      ...(admit ? { admit } : {}),
     });
   }
 
@@ -229,6 +231,13 @@ export class WebRtcCallSession implements CallController {
       switch (message.type) {
         case 'welcome':
           await this.onWelcome(message);
+          break;
+        case 'waiting':
+          // No seat yet: nothing to publish or subscribe until the host admits us.
+          this.setState('waiting');
+          break;
+        case 'admitted':
+          this.sendJoin(undefined, message.token);
           break;
         case 'publish.answer':
           await this.publishPc?.acceptAnswer(message.sdp);

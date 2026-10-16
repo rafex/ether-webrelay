@@ -76,7 +76,7 @@ sequenceDiagram
 | `type` | Campos | Cuándo |
 |--------|--------|--------|
 | `room.peek` | `room`, `token` | Al abrir el lobby (y al reconectar antes de entrar) |
-| `join` | `name` (≤ 60), `title?` (≤ 80), `media: {audio, video}`, `resume?` (id previo), `resumeToken?` (secreto del `welcome`) | Al pulsar "Entrar"; con `resume` + `resumeToken` tras una caída del WebSocket |
+| `join` | `name` (≤ 60), `title?` (≤ 80), `media: {audio, video}`, `resume?` (id previo), `resumeToken?` (secreto del `welcome`), `admit?` (token de `admitted`) | Al pulsar "Entrar"; con `resume` + `resumeToken` tras una caída del WebSocket |
 | `publish.offer` | `sdp`, `sources: {mid: "camera" \| "microphone" \| "screen" \| "screen-audio"}` | Oferta inicial y renegociaciones (nuevas pistas, ICE restart) |
 | `subscribe.answer` | `sdp` | Respuesta a cada `subscribe.offer` |
 | `ice` | `pc: "publish" \| "subscribe"`, `candidate: {candidate, sdpMid, sdpMLineIndex}` | Trickle ICE |
@@ -93,6 +93,8 @@ pantalla (no se puede deducir del tipo de medio).
 |--------|--------|----------------------|
 | `room.info` | `room`, `title`, `host: {name, avatar?}`, `channels: string[]`, `transport?: "webrtc" \| "websocket"` | Pinta el lobby; `channels` es informativo (youtube, twitch, facebook…); `transport` sobrescribe el de `config.json` |
 | `welcome` | `self`, `resumed`, `resumeToken`, `profile?`, `iceServers[]`, `participants[]` | Admite al participante; crea las conexiones (o las conserva si `resumed`); guarda `resumeToken` para reanudar |
+| `waiting` | — | La sala pide aprobación del anfitrión: el invitado **no tiene sitio** todavía. El cliente muestra «Esperando admisión» y no publica nada |
+| `admitted` | `token` | El anfitrión lo admitió: el cliente repite `join` con `admit: <token>` (de un solo uso y válido solo para ese socket) y sigue el flujo normal |
 | `publish.answer` | `sdp` | Completa la negociación de `publish` |
 | `subscribe.offer` | `sdp` | El cliente responde con `subscribe.answer` |
 | `ice` | `pc`, `candidate` | Se aplica (o se encola hasta tener descripción remota) |
@@ -124,7 +126,24 @@ siempre acotada por el perfil.
 | `room-closed` | La sala se ha cerrado. |
 | `room-full` | La sala está llena. |
 | `kicked` | El anfitrión te ha retirado de la sala. |
+| `denied` | El anfitrión no te ha admitido en la sala. (También: nadie te admitió en 5 min, o el token `admit` no es válido.) |
 | otro | `message` del puente, o un texto genérico con el código |
+
+## Sala de espera
+
+Si la sala tiene `admission: "approval"` (lo decide el anfitrión en la consola del
+puente), el puente no sienta al invitado tras `join`:
+
+1. `join` → el puente responde `waiting` (no hay `welcome`, ni sitio, ni presencia).
+2. El anfitrión lo admite → `admitted {token}`.
+3. El cliente envía `join` otra vez con `admit: <token>` → `welcome` y el flujo normal.
+4. Si lo deniega, o no responde en 5 min, llega el error fatal `denied`.
+
+Si el socket cae mientras espera se pierde el turno: al reconectar el cliente
+envía `join` (sin `resume`, no tiene sesión) y vuelve a esperar. Una reanudación
+de una sesión ya sentada no pasa por la sala de espera. Una sala `open` (por
+defecto) nunca envía `waiting`, y un puente anterior tampoco: el cliente funciona
+igual con ambos.
 
 ## Reconexión
 
