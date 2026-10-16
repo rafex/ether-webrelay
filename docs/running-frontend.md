@@ -295,6 +295,27 @@ Con el sitio en HTTPS, el puente debe ser `wss://`: los navegadores bloquean
 Cada helper deja un log de auditoría en `/var/log/ether-webrelay/` o, si no
 hay permisos, en `/tmp/ether-webrelay/`.
 
+## Dependencias
+
+Dependabot propone las actualizaciones cada semana (`.github/dependabot.yml`) con esta política:
+
+- **Cooldown de 14 días**: no se propone una versión con menos de dos semanas. Una versión recién
+  publicada puede retirarse por un fallo o por estar comprometida; esperar sale gratis. Las
+  actualizaciones de **seguridad** no tienen cooldown.
+- **Las herramientas de desarrollo** (Biome, Vitest, TypeScript, `werift`…) llegan en un solo PR.
+- **Node: solo LTS** (DEC-0008; hoy la 24). Las versiones impares (25…) nunca llegan a LTS y
+  duran pocos meses; las pares nuevas se adoptan a mano cuando pasan a LTS, en octubre.
+- **Playwright se sube a mano, paquete e imagen a la vez.** `@playwright/test` y
+  `containers/e2e/Containerfile` (`mcr.microsoft.com/playwright:vX.Y.Z-noble`) deben llevar la misma
+  versión exacta: el navegador de la imagen es el único que el paquete sabe lanzar («Looks like
+  Playwright was just updated to…»). Dependabot no puede subir ambos en un PR, así que están
+  ignorados y `tests/unit/playwright-version.test.ts` hace fallar el CI si divergen. Para subirlos:
+  cambia `package.json` + lockfile (`npm install --save-exact -D @playwright/test@X.Y.Z`) y el
+  `FROM` de la imagen (tag y digest) en el mismo commit.
+- **MediaPipe** (`@mediapipe/tasks-vision`) cambia el runtime WASM que descarga cada invitado y
+  ningún test cubre los efectos: antes de fusionar una subida, prueba el desenfoque en Chrome
+  (GPU y CPU) y comprueba que no hay violaciones de CSP.
+
 ## Referencias
 
 - [Guía de inicio](getting-started.md) · [Arquitectura](architecture.md) ·
