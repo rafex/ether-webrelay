@@ -19,6 +19,7 @@ import { SessionInviteMemory } from '../infrastructure/storage/session-invite';
 import { performanceTimeSource } from '../infrastructure/time/performance-time-source';
 import { WebSocketTransport } from '../infrastructure/transport/websocket-transport';
 import { browserPeerConnectionFactory } from '../infrastructure/webrtc/browser-peer-connection';
+import { type AudioEnhancerPort, passthroughAudio } from '../ports/audio-enhancer';
 import { systemTimer } from '../ports/time';
 import { passthroughEffects, type VideoEffectsPort } from '../ports/video-effects';
 import { CallView } from './call-view';
@@ -36,6 +37,8 @@ export interface AppExtensions {
   /** Registers an uploaded image and returns its effect image id. */
   readonly uploadBackground?: (file: File) => Promise<string>;
   readonly effectsStatus?: () => string;
+  /** Advanced microphone processing (RNNoise, leveler). */
+  readonly audioEnhancer?: AudioEnhancerPort;
   /** Local recording of the call; the returned toggle resolves to "recording now". */
   readonly recorder?: (
     call: CallController,
@@ -112,6 +115,7 @@ export class WebRelayApp {
       preferences: new LocalPreferences(),
       profile: config.defaultProfile,
       effects: this.extensions.effects ?? passthroughEffects,
+      audioEnhancer: this.extensions.audioEnhancer ?? passthroughAudio,
     });
     this.lobby = lobby;
     this.settings = new SettingsDialog(this.settingsContext());
@@ -264,6 +268,7 @@ export class WebRelayApp {
         await this.applyPreferences({ effect: { kind: 'image', imageId } });
       },
       effectsStatus: () => extensions.effectsStatus?.() ?? '',
+      audioStatus: () => extensions.audioEnhancer?.status ?? '',
     };
   }
 

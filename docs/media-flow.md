@@ -53,6 +53,21 @@ sustituye el fondo y `canvas.captureStream()` entrega la pista procesada. Si el
 efecto falla se envía la cámara sin tocar: la llamada nunca pierde video por un
 efecto.
 
+El **audio avanzado** (opcional, en *Ajustes → Efectos*) hace lo mismo con el micrófono:
+la pista pasa por un `AudioContext` a 48 kHz con dos etapas que se activan por separado
+(`infrastructure/audio/web-audio-enhancer.ts`):
+
+- **Supresión de ruido avanzada**: RNNoise (red neuronal, WebAssembly dentro de un AudioWorklet)
+  quita ventiladores, teclado y zumbidos mejor que el filtro del navegador, que se apaga mientras
+  tanto para no aplicar dos supresores. Medido en Chromium: un ventilador baja más de 50 dB y una
+  voz sintética queda intacta.
+- **Nivelador de voz** (`leveler-dsp.ts`, AudioWorklet): acerca la voz a −20 dBFS con una ganancia
+  lenta limitada a +12/−12 dB que **no se mueve en silencio** (no sube el ruido de la sala entre
+  frases), y un limitador con 5 ms de anticipación que impide que el pico supere −2 dBFS.
+
+Todo se carga bajo demanda; si algo falla (sin AudioWorklet, wasm bloqueado) se envía el micrófono
+sin tocar y los ajustes muestran el motivo: la llamada nunca pierde la voz por una mejora.
+
 ## 2. Dos conexiones: «publish» y «subscribe»
 
 Cada participante mantiene dos `RTCPeerConnection` con el SFU
@@ -110,7 +125,7 @@ Pasos y dónde ocurren:
 | Etapa | Quién | Detalle |
 |-------|-------|---------|
 | Codificación de video | **Codificador nativo del navegador** | Se negocia en el SDP; con el puente actual se usa **VP8** (el SFU acepta VP8, H.264 y Opus). No hay código del webrelay en esta etapa |
-| Codificación de audio | Codificador nativo | **Opus** (48 kHz); eco, ruido y ganancia los aplica el navegador al capturar |
+| Codificación de audio | Codificador nativo | **Opus** (48 kHz); eco, ruido y ganancia los aplica el navegador al capturar (o, si se activa el audio avanzado, RNNoise y el nivelador antes de codificar) |
 | Control de congestión | Navegador (TWCC/REMB) | Ajusta el bitrate real **por debajo** del máximo del perfil según la red |
 | Retransmisión | NACK/PLI | El puente pide retransmitir paquetes o un fotograma clave; el navegador responde |
 | Cifrado | DTLS-SRTP | Obligatorio en WebRTC; el puente solo ve RTP tras descifrar |
@@ -178,12 +193,13 @@ por ancho de banda) usa `chrome://webrtc-internals`. Primera herramienta ante
 
 ## 8. WebAssembly en el cliente (hoy)
 
-WebAssembly **no participa en el envío** del video; sí aparece en dos sitios:
+WebAssembly **no participa en el envío** del video; sí aparece en tres sitios:
 
 | Uso | Dónde | Cuándo se carga |
 |-----|-------|-----------------|
 | Segmentación para fondo virtual (MediaPipe) | `infrastructure/effects/mediapipe-effects.ts` | Bajo demanda, al activar un efecto |
 | Exportación de la grabación local a OGV (ffmpeg.wasm) | `infrastructure/recording/` | Bajo demanda, al exportar |
+| Supresión de ruido del micrófono (RNNoise) | `infrastructure/audio/web-audio-enhancer.ts` | Bajo demanda, al activar «Supresión de ruido avanzada» |
 
 ## 9. Modo alternativo `websocket`
 

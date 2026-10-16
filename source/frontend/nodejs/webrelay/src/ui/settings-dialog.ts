@@ -27,6 +27,7 @@ export interface SettingsContext {
   backgrounds(): readonly BackgroundOption[];
   uploadBackground(file: File): Promise<void>;
   effectsStatus(): string;
+  audioStatus(): string;
 }
 
 const RESOLUTION_LABELS: Record<ResolutionChoice, string> = {
@@ -77,6 +78,12 @@ export class SettingsDialog {
     }));
     this.onToggle('set-gain', (checked) => ({
       audio: { ...this.prefs.audio, autoGainControl: checked },
+    }));
+    this.onToggle('set-rnnoise', (checked) => ({
+      audio: { ...this.prefs.audio, rnnoise: checked },
+    }));
+    this.onToggle('set-leveler', (checked) => ({
+      audio: { ...this.prefs.audio, leveler: checked },
     }));
 
     this.dialog.addEventListener('click', (event) => {
@@ -165,6 +172,11 @@ export class SettingsDialog {
     byId<HTMLInputElement>('set-echo').checked = prefs.audio.echoCancellation;
     byId<HTMLInputElement>('set-noise').checked = prefs.audio.noiseSuppression;
     byId<HTMLInputElement>('set-gain').checked = prefs.audio.autoGainControl;
+    byId<HTMLInputElement>('set-rnnoise').checked = prefs.audio.rnnoise;
+    byId<HTMLInputElement>('set-leveler').checked = prefs.audio.leveler;
+    // RNNoise replaces the browser's suppression: showing both as active would be a lie.
+    byId<HTMLInputElement>('set-noise').disabled = prefs.audio.rnnoise;
+    byId('audio-status').textContent = this.ctx.audioStatus();
 
     const preview = byId<HTMLVideoElement>('settings-preview');
     attachTrack(preview, this.dialog.open ? this.ctx.cameraTrack() : undefined);

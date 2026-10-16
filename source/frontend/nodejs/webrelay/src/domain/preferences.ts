@@ -80,6 +80,8 @@ export function sanitizePreferences(raw: unknown): UserPreferences {
       echoCancellation: bool(audio.echoCancellation, true),
       noiseSuppression: bool(audio.noiseSuppression, true),
       autoGainControl: bool(audio.autoGainControl, true),
+      rnnoise: bool(audio.rnnoise, false),
+      leveler: bool(audio.leveler, false),
     },
     ...(isViewMode(v.view) ? { view: v.view } : {}),
     effect: sanitizeEffect(v.effect),

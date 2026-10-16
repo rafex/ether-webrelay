@@ -110,8 +110,20 @@ describe('quality profile', () => {
         echoCancellation: false,
         noiseSuppression: true,
         autoGainControl: true,
+        rnnoise: false,
+        leveler: false,
       }),
     ).toEqual({ echoCancellation: false, noiseSuppression: true, autoGainControl: true });
+    // RNNoise replaces the browser's suppression: asking for both would process the voice twice.
+    expect(
+      microphoneConstraints({
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        rnnoise: true,
+        leveler: true,
+      }),
+    ).toEqual({ echoCancellation: true, noiseSuppression: false, autoGainControl: true });
   });
 
   it('scales camera bitrate with the area actually sent', () => {
@@ -178,9 +190,21 @@ describe('preferences and identity', () => {
       name: 'x'.repeat(60),
       cameraId: 'cam',
       mirror: false,
-      audio: { echoCancellation: false, noiseSuppression: true, autoGainControl: true },
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: true,
+        autoGainControl: true,
+        rnnoise: false,
+        leveler: false,
+      },
       view: 'stats',
       effect: { kind: 'image', imageId: 'aurora' },
+    });
+    // Advanced audio is opt-in, and only real booleans count.
+    expect(sanitizePreferences({}).audio).toMatchObject({ rnnoise: false, leveler: false });
+    expect(sanitizePreferences({ audio: { rnnoise: true, leveler: 'yes' } }).audio).toMatchObject({
+      rnnoise: true,
+      leveler: false,
     });
     expect(sanitizePreferences({ effect: { kind: 'image', imageId: '../../etc' } }).effect).toEqual(
       {

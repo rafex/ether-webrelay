@@ -4,6 +4,8 @@ import { SignalingClient } from '../../src/application/signaling-client';
 import { DEFAULT_PREFERENCES } from '../../src/domain/preferences';
 import { DEFAULT_PROFILE } from '../../src/domain/quality-profile';
 import { ReconnectPolicy } from '../../src/domain/reconnect-policy';
+import type { AudioEnhancerPort } from '../../src/ports/audio-enhancer';
+import type { MediaTrackLike } from '../../src/ports/media';
 import type { VideoEffectsPort } from '../../src/ports/video-effects';
 import { FakeDevices, FakeSignaling, FakeTrack, MemoryPreferences } from '../support/call-fakes';
 import { flushMicrotasks, ManualClock } from '../support/fakes';
@@ -16,7 +18,13 @@ const ROOM_INFO = {
   channels: ['youtube', 'twitch'],
 };
 
-function setup(options: { effects?: VideoEffectsPort; prefs?: MemoryPreferences } = {}) {
+function setup(
+  options: {
+    effects?: VideoEffectsPort;
+    audioEnhancer?: AudioEnhancerPort;
+    prefs?: MemoryPreferences;
+  } = {},
+) {
   const clock = new ManualClock();
   const signaling = new FakeSignaling();
   const devices = new FakeDevices();
@@ -41,6 +49,7 @@ function setup(options: { effects?: VideoEffectsPort; prefs?: MemoryPreferences 
     preferences,
     profile: DEFAULT_PROFILE,
     ...(options.effects ? { effects: options.effects } : {}),
+    ...(options.audioEnhancer ? { audioEnhancer: options.audioEnhancer } : {}),
   });
   return { clock, signaling, devices, preferences, client, lobby };
 }
@@ -135,7 +144,13 @@ describe('LobbyService', () => {
     });
     expect(h.devices.microphoneCalls).toHaveLength(1);
     await h.lobby.updatePreferences({
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true },
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: true,
+        rnnoise: false,
+        leveler: false,
+      },
     });
     expect(h.devices.microphoneCalls.at(-1)).toMatchObject({ echoCancellation: false });
     expect(h.devices.cameraCalls).toHaveLength(2);
@@ -217,5 +232,102 @@ describe('LobbyService', () => {
     await h.lobby.start();
     h.lobby.dispose();
     expect(h.devices.tracks.every((t) => t.stopped)).toBe(true);
+  });
+
+  describe('advanced microphone processing', () => {
+    class FakeEnhancer implements AudioEnhancerPort {
+      status = '';
+      readonly applied: { rnnoise: boolean; leveler: boolean }[] = [];
+      readonly outputs: FakeTrack[] = [];
+      stops = 0;
+      /** When true it behaves like a failed enhancer: hands back the source untouched. */
+      fail = false;
+
+      async apply(source: MediaTrackLike, options: { rnnoise: boolean; leveler: boolean }) {
+        this.applied.push(options);
+        if (this.fail) return { track: source, stop: () => undefined };
+        const out = new FakeTrack('audio', 'processed');
+        this.outputs.push(out);
+        return {
+          track: out as MediaTrackLike,
+          stop: () => {
+            this.stops++;
+          },
+        };
+      }
+    }
+    const withAudio = (audio: Partial<(typeof DEFAULT_PREFERENCES)['audio']>) => {
+      const prefs = new MemoryPreferences();
+      prefs.save({ ...DEFAULT_PREFERENCES, audio: { ...DEFAULT_PREFERENCES.audio, ...audio } });
+      return prefs;
+    };
+
+    it('does not touch the microphone unless asked to', async () => {
+      const enhancer = new FakeEnhancer();
+      const h = setup({ audioEnhancer: enhancer });
+      await h.lobby.start();
+      expect(enhancer.applied).toEqual([]);
+      expect(h.lobby.snapshot.microphone?.label).toBe('mic');
+    });
+
+    it('publishes the processed track and opens the microphone without the browser suppression', async () => {
+      const enhancer = new FakeEnhancer();
+      const h = setup({
+        audioEnhancer: enhancer,
+        prefs: withAudio({ rnnoise: true, leveler: true }),
+      });
+      await h.lobby.start();
+      expect(enhancer.applied).toEqual([{ rnnoise: true, leveler: true }]);
+      expect(h.devices.microphoneCalls[0]).toMatchObject({ noiseSuppression: false });
+      expect(h.lobby.snapshot.microphone?.label).toBe('processed');
+      // The microphone is the raw track; releasing the handle must free both.
+      const { microphone } = h.lobby.takePreview();
+      microphone?.stop();
+      expect(enhancer.stops).toBe(1);
+      expect(h.devices.tracks.find((t) => t.label === 'mic')?.readyState).toBe('ended');
+    });
+
+    it('applies only the leveler without disturbing the browser suppression', async () => {
+      const enhancer = new FakeEnhancer();
+      const h = setup({ audioEnhancer: enhancer, prefs: withAudio({ leveler: true }) });
+      await h.lobby.start();
+      expect(enhancer.applied).toEqual([{ rnnoise: false, leveler: true }]);
+      expect(h.devices.microphoneCalls[0]).toMatchObject({ noiseSuppression: true });
+    });
+
+    it('reopens the microphone with the browser suppression when RNNoise cannot run', async () => {
+      const enhancer = new FakeEnhancer();
+      enhancer.fail = true;
+      const h = setup({ audioEnhancer: enhancer, prefs: withAudio({ rnnoise: true }) });
+      await h.lobby.start();
+      expect(h.devices.microphoneCalls).toHaveLength(2);
+      expect(h.devices.microphoneCalls[0]).toMatchObject({ noiseSuppression: false });
+      expect(h.devices.microphoneCalls[1]).toMatchObject({ noiseSuppression: true });
+      expect(h.devices.tracks.filter((t) => t.label === 'mic')[0]?.readyState).toBe('ended');
+      expect(h.lobby.snapshot.microphone?.readyState).toBe('live');
+    });
+
+    it('keeps the plain microphone when only the leveler failed', async () => {
+      const enhancer = new FakeEnhancer();
+      enhancer.fail = true;
+      const h = setup({ audioEnhancer: enhancer, prefs: withAudio({ leveler: true }) });
+      await h.lobby.start();
+      expect(h.devices.microphoneCalls).toHaveLength(1);
+      expect(h.lobby.snapshot.microphone?.readyState).toBe('live');
+    });
+
+    it('rebuilds the pipeline when the setting changes', async () => {
+      const enhancer = new FakeEnhancer();
+      const h = setup({ audioEnhancer: enhancer });
+      await h.lobby.start();
+      await h.lobby.updatePreferences({
+        audio: { ...DEFAULT_PREFERENCES.audio, rnnoise: true },
+      });
+      expect(enhancer.applied).toEqual([{ rnnoise: true, leveler: false }]);
+      expect(h.lobby.snapshot.microphone?.label).toBe('processed');
+      await h.lobby.updatePreferences({ audio: { ...DEFAULT_PREFERENCES.audio } });
+      expect(enhancer.stops).toBe(1);
+      expect(h.lobby.snapshot.microphone?.label).toBe('mic');
+    });
   });
 });
