@@ -314,6 +314,51 @@ describe('WebRtcCallSession — resilience', () => {
     expect(h.call.snapshot.state).toBe('connected');
   });
 
+  it('waits for the host, then repeats join with the admission token', async () => {
+    const h = await setup();
+    const admitted = h.call.join();
+    await h.receive({ type: 'waiting' });
+    expect(h.call.snapshot.state).toBe('waiting');
+    // No seat yet: nothing is published or negotiated while waiting.
+    expect(h.peers.created).toHaveLength(0);
+    expect(h.conn().ofType('join')).toHaveLength(1);
+
+    await h.receive({ type: 'admitted', token: 'one-time' });
+    const joins = h.conn().ofType('join');
+    expect(joins).toHaveLength(2);
+    expect(joins[1]).toMatchObject({ name: 'Raúl', admit: 'one-time' });
+    expect(joins[1]).not.toHaveProperty('resume');
+
+    await h.receive(WELCOME);
+    await admitted;
+    expect(h.call.snapshot.state).toBe('connected');
+    expect(h.peers.created).toHaveLength(2);
+  });
+
+  it('ends with a clear message when the host turns the guest away', async () => {
+    const h = await setup();
+    const admitted = h.call.join();
+    await h.receive({ type: 'waiting' });
+    h.conn().receive({ type: 'error', code: 'denied', message: '', fatal: true });
+    await expect(admitted).rejects.toMatchObject({
+      message: 'El anfitrión no te ha admitido en la sala.',
+    });
+    expect(h.call.snapshot.state).toBe('failed');
+    expect(h.camera.stopped).toBe(true);
+  });
+
+  it('rejoins from the waiting room when the socket drops, without a resume', async () => {
+    const h = await setup();
+    void h.call.join();
+    await h.receive({ type: 'waiting' });
+    h.conn().drop();
+    await h.clock.advance(100);
+    const [join] = h.conn().ofType('join');
+    expect(join).toMatchObject({ name: 'Raúl' });
+    expect(join).not.toHaveProperty('resume');
+    expect(join).not.toHaveProperty('admit');
+  });
+
   it('proves ownership with the resume token the bridge handed out', async () => {
     const h = await setup();
     const admitted = h.call.join();

@@ -76,6 +76,10 @@ export type ClientMessage =
       readonly media: { readonly audio: boolean; readonly video: boolean };
       /** Previous participant id when rejoining after a dropped socket. */
       readonly resume?: string;
+      /** Secret from `welcome` that proves ownership of `resume`. */
+      readonly resumeToken?: string;
+      /** One-time token from `admitted` after waiting for the host's approval. */
+      readonly admit?: string;
     }
   | {
       readonly type: 'publish.offer';
@@ -109,6 +113,10 @@ export type ServerMessage =
       readonly iceServers: readonly IceServerConfig[];
       readonly participants: readonly ParticipantInfo[];
     }
+  /** The room needs the host's approval: the guest has no seat yet. */
+  | { readonly type: 'waiting' }
+  /** The host let the guest in: send `join` again with this one-time token. */
+  | { readonly type: 'admitted'; readonly token: string }
   | { readonly type: 'publish.answer'; readonly sdp: string }
   | { readonly type: 'subscribe.offer'; readonly sdp: string }
   | { readonly type: 'ice'; readonly pc: PeerRole; readonly candidate: IceCandidateData }
@@ -167,6 +175,13 @@ export function parseServerMessage(text: string): ServerMessage {
       const profile = parseQualityProfile(msg.profile);
       if (!profile) throw new ProtocolError('profile invalid');
       return { type: 'profile', profile };
+    }
+    case 'waiting':
+      return { type: 'waiting' };
+    case 'admitted': {
+      const token = requireString(msg, 'token');
+      if (token === '' || token.length > 256) throw new ProtocolError('admitted.token invalid');
+      return { type: 'admitted', token };
     }
     case 'pong':
       return { type: 'pong', t: requireNumber(msg, 't') };
