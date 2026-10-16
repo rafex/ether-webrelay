@@ -1,5 +1,5 @@
 import { type BrowserContext, expect, type Page, test } from '@playwright/test';
-import { BRIDGE_URL } from '../../playwright.config';
+import { BRIDGE_URL, EXTERNAL_BRIDGE_URL } from '../../playwright.config';
 
 const CONFIG = {
   bridgeUrl: BRIDGE_URL,
@@ -126,24 +126,88 @@ test.describe('lobby', () => {
   });
 });
 
+/**
+ * Waiting room. Against the dev bridge double, rooms named `wait-…` / `deny-…` mimic an
+ * approval room whose host answers after a moment. Against a real bridge (E2E_BRIDGE_URL,
+ * development mode, admin token `dev`) the test is the host: it creates the room with
+ * `admission: approval` and admits or denies through the host API, which makes this a true
+ * integration test of both repositories.
+ */
+const HOST_API = EXTERNAL_BRIDGE_URL
+  ? `${EXTERNAL_BRIDGE_URL.replace(/^ws/, 'http').replace(/\/signal$/, '')}/api/v1`
+  : undefined;
+
+/** The parts of the host API's room view these tests read. */
+interface RoomView {
+  waiting: { id: string }[];
+  participants: unknown[];
+}
+
+async function host(method: string, path: string, body?: unknown): Promise<RoomView> {
+  const response = await fetch(`${HOST_API}${path}`, {
+    method,
+    headers: { Authorization: 'Bearer dev', 'Content-Type': 'application/json' },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  });
+  expect(response.ok, `${method} ${path} -> ${response.status}`).toBe(true);
+  return (response.status === 204 ? undefined : await response.json()) as RoomView;
+}
+
+/** An approval room: created through the host API on a real bridge, by name on the double. */
+async function approvalRoom(kind: 'wait' | 'deny'): Promise<string> {
+  const id = `${kind}-${Date.now().toString(36)}`;
+  if (HOST_API) {
+    await host('POST', '/rooms', {
+      id,
+      title: `Sala de pruebas · ${id}`,
+      host: { name: 'Anfitrión de pruebas' },
+      admission: 'approval',
+    });
+  }
+  return id;
+}
+
+/** The host's answer: automatic on the double, an API call on a real bridge. */
+async function answer(room: string, verdict: 'admit' | 'deny'): Promise<void> {
+  if (!HOST_API) return;
+  let waiting: { id: string }[] = [];
+  await expect
+    .poll(async () => {
+      waiting = (await host('GET', `/rooms/${room}`)).waiting;
+      return waiting.length;
+    })
+    .toBe(1);
+  await host('POST', `/rooms/${room}/waiting/${waiting[0]?.id}/${verdict}`);
+}
+
 test.describe('waiting room', () => {
   test('a guest waits for the host, then is admitted and joins', async ({ context }) => {
+    const room = await approvalRoom('wait');
     const page = await participant(context);
-    await openLobby(page, 'wait-e2e');
+    await openLobby(page, room);
     await page.locator('#join-name').fill('Ana');
     await page.locator('#join-button').click();
     await expect(page.locator('#call-badge')).toHaveText('Esperando admisión');
-    // The dev bridge "host" admits after a moment: the guest ends up in the room.
+    if (HOST_API) {
+      // Nobody answered yet: still no seat.
+      expect((await host('GET', `/rooms/${room}`)).participants).toHaveLength(0);
+    }
+    await answer(room, 'admit');
     await expect(page.locator('#call-badge')).toHaveText('En la sala');
+    if (HOST_API) expect((await host('GET', `/rooms/${room}`)).participants).toHaveLength(1);
   });
 
   test('a guest the host turns away sees why', async ({ context }) => {
+    const room = await approvalRoom('deny');
     const page = await participant(context);
-    await openLobby(page, 'deny-e2e');
+    await openLobby(page, room);
     await page.locator('#join-name').fill('Ana');
     await page.locator('#join-button').click();
+    await expect(page.locator('#call-badge')).toHaveText('Esperando admisión');
+    await answer(room, 'deny');
     await expect(page.locator('[data-screen="left"]')).toBeVisible();
     await expect(page.locator('#left-message')).toContainText('no te ha admitido');
+    if (HOST_API) expect((await host('GET', `/rooms/${room}`)).participants).toHaveLength(0);
   });
 });
 
