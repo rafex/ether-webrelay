@@ -7,6 +7,7 @@ import {
   type QualityProfile,
 } from '../domain/quality-profile';
 import type { RoomInfo } from '../domain/signaling';
+import { type AudioEnhancerPort, passthroughAudio } from '../ports/audio-enhancer';
 import type { DeviceInfo, MediaDevicesPort, MediaTrackLike } from '../ports/media';
 import type { PreferencesPort } from '../ports/preferences';
 import { passthroughEffects, type VideoEffectsPort } from '../ports/video-effects';
@@ -35,6 +36,7 @@ export interface LobbyServiceDeps {
   readonly preferences: PreferencesPort;
   readonly profile: QualityProfile;
   readonly effects?: VideoEffectsPort;
+  readonly audioEnhancer?: AudioEnhancerPort;
 }
 
 const CAMERA_KEYS: readonly (keyof UserPreferences)[] = ['cameraId', 'resolution', 'effect'];
@@ -60,10 +62,12 @@ export class LobbyService implements LocalMediaProvider {
   private readonly unsubscribers: (() => void)[] = [];
   private readonly listeners = new Set<(snapshot: LobbySnapshot) => void>();
   private readonly effects: VideoEffectsPort;
+  private readonly audioEnhancer: AudioEnhancerPort;
 
   constructor(private readonly deps: LobbyServiceDeps) {
     this.prefs = deps.preferences.load();
     this.effects = deps.effects ?? passthroughEffects;
+    this.audioEnhancer = deps.audioEnhancer ?? passthroughAudio;
   }
 
   get snapshot(): LobbySnapshot {
@@ -202,10 +206,32 @@ export class LobbyService implements LocalMediaProvider {
   }
 
   async openMicrophone(): Promise<LocalTrackHandle> {
-    const track = await this.deps.devices.microphone(
-      microphoneConstraints(this.prefs.audio, this.prefs.microphoneId),
+    const { audio, microphoneId } = this.prefs;
+    const raw = await this.deps.devices.microphone(microphoneConstraints(audio, microphoneId));
+    if (!audio.rnnoise && !audio.leveler) return { track: raw, stop: () => raw.stop() };
+
+    const processed = await this.audioEnhancer.apply(raw, {
+      rnnoise: audio.rnnoise,
+      leveler: audio.leveler,
+    });
+    if (processed.track !== raw) {
+      return {
+        track: processed.track,
+        stop: () => {
+          processed.stop();
+          raw.stop();
+        },
+      };
+    }
+    // Nothing could be applied. If RNNoise was meant to replace the browser's noise suppression,
+    // the microphone was opened without it: open it again the usual way instead of leaving the
+    // voice unprocessed.
+    if (!audio.rnnoise) return { track: raw, stop: () => raw.stop() };
+    raw.stop();
+    const plain = await this.deps.devices.microphone(
+      microphoneConstraints({ ...audio, rnnoise: false }, microphoneId),
     );
-    return { track, stop: () => track.stop() };
+    return { track: plain, stop: () => plain.stop() };
   }
 
   async openScreen(options: { framerate: number; withAudio: boolean }): Promise<ScreenHandles> {

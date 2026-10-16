@@ -50,12 +50,18 @@ export interface AudioProcessing {
   readonly echoCancellation: boolean;
   readonly noiseSuppression: boolean;
   readonly autoGainControl: boolean;
+  /** RNNoise (neural, in an AudioWorklet) instead of the browser's noise suppression. */
+  readonly rnnoise: boolean;
+  /** Voice leveler: gentle compression, make-up gain and a peak limiter. */
+  readonly leveler: boolean;
 }
 
 export const DEFAULT_AUDIO_PROCESSING: AudioProcessing = {
   echoCancellation: true,
   noiseSuppression: true,
   autoGainControl: true,
+  rnnoise: false,
+  leveler: false,
 };
 
 export function isResolutionChoice(value: unknown): value is ResolutionChoice {
@@ -98,7 +104,8 @@ export function microphoneConstraints(
   return {
     ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
     echoCancellation: processing.echoCancellation,
-    noiseSuppression: processing.noiseSuppression,
+    // RNNoise replaces the browser's suppression: running both would process the voice twice.
+    noiseSuppression: processing.noiseSuppression && !processing.rnnoise,
     autoGainControl: processing.autoGainControl,
   };
 }
