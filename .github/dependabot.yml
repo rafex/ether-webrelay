@@ -1,20 +1,57 @@
 # Actualizaciones de dependencias y de acciones de GitHub como PR semanales.
 # Las acciones están fijadas a una versión exacta: Dependabot propone la nueva.
+#
+# Política (ver docs/running-frontend.md, «Dependencias»):
+#  - cooldown: no se propone una versión con menos de 14 días de vida. Una versión recién
+#    publicada puede retirarse por un fallo o por estar comprometida; esperar es gratis (las
+#    actualizaciones de seguridad no tienen cooldown).
+#  - Node: solo versiones LTS (DEC-0008, hoy 24). Las pares nuevas pasan a LTS en octubre y se
+#    adoptan a mano; las impares (25…) nunca llegan a LTS y viven pocos meses.
+#  - Playwright: el paquete npm y la imagen de contenedor tienen que llevar la MISMA versión y
+#    Dependabot no puede subir ambos a la vez, así que se suben a mano en un solo PR (hay una
+#    prueba, tests/unit/playwright-version.test.ts, que falla si no coinciden).
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /source/frontend/nodejs/webrelay
     schedule: {interval: weekly}
     open-pull-requests-limit: 5
+    cooldown: {default-days: 14}
+    groups:
+      # Herramientas de desarrollo y pruebas: un solo PR en lugar de uno por paquete.
+      dev-tools:
+        dependency-type: development
+    ignore:
+      - dependency-name: "@playwright/test"
   - package-ecosystem: github-actions
     directory: /
     schedule: {interval: weekly}
+    cooldown: {default-days: 14}
+    groups:
+      actions: {patterns: ["*"]}
   - package-ecosystem: docker
     directory: /containers/frontend
     schedule: {interval: weekly}
+    cooldown: {default-days: 14}
+    ignore:
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "library/node"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: docker
     directory: /containers/ci
     schedule: {interval: weekly}
+    cooldown: {default-days: 14}
+    ignore:
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "library/node"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: docker
     directory: /containers/e2e
     schedule: {interval: weekly}
+    cooldown: {default-days: 14}
+    ignore:
+      # Va emparejada con @playwright/test: se sube a mano, a la vez.
+      - dependency-name: "mcr.microsoft.com/playwright"
+      - dependency-name: "playwright"
