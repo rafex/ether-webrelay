@@ -137,14 +137,20 @@ const HOST_API = EXTERNAL_BRIDGE_URL
   ? `${EXTERNAL_BRIDGE_URL.replace(/^ws/, 'http').replace(/\/signal$/, '')}/api/v1`
   : undefined;
 
-async function host(method: string, path: string, body?: unknown): Promise<any> {
+/** The parts of the host API's room view these tests read. */
+interface RoomView {
+  waiting: { id: string }[];
+  participants: unknown[];
+}
+
+async function host(method: string, path: string, body?: unknown): Promise<RoomView> {
   const response = await fetch(`${HOST_API}${path}`, {
     method,
     headers: { Authorization: 'Bearer dev', 'Content-Type': 'application/json' },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
   expect(response.ok, `${method} ${path} -> ${response.status}`).toBe(true);
-  return response.status === 204 ? undefined : response.json();
+  return (response.status === 204 ? undefined : await response.json()) as RoomView;
 }
 
 /** An approval room: created through the host API on a real bridge, by name on the double. */
