@@ -35,6 +35,8 @@ help:
 	@echo "  make image             - Imagen de CI (containers/ci/Containerfile)"
 	@echo "  make ci                - install + lint + build + test en contenedor"
 	@echo "  make app-image         - Imagen servible (containers/frontend/Containerfile)"
+	@echo "  make scan              - Trivy sobre la imagen servible (HIGH/CRITICAL corregibles)"
+	@echo "  make audit             - npm audit de las dependencias de producción (HIGH+)"
 	@echo ""
 	@echo "  make pre-commit | pre-push   - Gates de git hooks"
 	@echo "  make man TARGET=<tarea>      - Manual (docs/man_<tarea>.md)"

@@ -11,7 +11,7 @@ source "$SCRIPT_DIR/lib/messages.sh"
 # Stack (regla 08): Podman primero, Docker con warning; Containerfile, nunca Dockerfile.
 #
 # Contrato de flags (regla 01):
-#   --action runtime|image|ci|app-image|app-run|app-stop|app-logs
+#   --action runtime|image|ci|app-image|scan|app-run|app-stop|app-logs
 #   --project-name ether-webrelay
 #   --container-runtime podman|docker   Sobreescribe la detección
 #   --ci-image / --ci-containerfile     Imagen de CI (toolchain)
@@ -154,6 +154,19 @@ case "$action" in
 		;;
 	app-image)
 		build_image "$app_containerfile" "$app_image"
+		;;
+	scan)
+		# Trivy sobre la imagen servible: falla con HIGH/CRITICAL que ya tengan corrección
+		# (lo que no se puede arreglar todavía no debe bloquear). Reconstruye antes si no existe.
+		"$runtime" image exists "$app_image" 2>/dev/null || build_image "$app_containerfile" "$app_image"
+		scan_dir="$(mktemp -d)"
+		trap 'rm -rf "$scan_dir"' EXIT
+		trivy_image="docker.io/aquasec/trivy:0.74.0" # publicada el 2026-08-14
+		log_info "Scanning $app_image with $trivy_image"
+		"$runtime" save -o "$scan_dir/image.tar" "$app_image"
+		"$runtime" run --rm -v "$scan_dir:/scan:ro" -v ether-webrelay-trivy:/root/.cache "$trivy_image" \
+			image --input /scan/image.tar --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 --no-progress
+		success "sin vulnerabilidades HIGH/CRITICAL corregibles en $app_image"
 		;;
 	app-run)
 		build_image "$app_containerfile" "$app_image"

@@ -84,6 +84,8 @@ resolve_cmd() {
 		build|typecheck|lint|format|coverage|test-unit|test-integration)
 			echo "$run $goal" ;;
 		test)    echo "$run test" ;;
+		# Vulnerabilidades conocidas en las dependencias que se envían al navegador (no las de desarrollo).
+		audit)   echo "npm audit --omit=dev --audit-level=high" ;;
 		# E2E local: Chrome instalado si existe, si no el Chromium de Playwright.
 		e2e)     echo "PW_CHANNEL=${PW_CHANNEL:-$(default_channel)} $run test:e2e" ;;
 		dev)     echo "$run dev -- --host $host --port $port" ;;

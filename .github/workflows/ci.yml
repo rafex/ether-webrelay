@@ -6,6 +6,8 @@ on:
   push:
     branches: [main, develop]
   pull_request:
+  schedule:
+    - cron: "37 6 * * 1" # los avisos nuevos llegan aunque no haya cambios
 
 permissions:
   contents: read
@@ -26,6 +28,28 @@ jobs:
 
       - name: Build serving image
         run: make app-image
+
+  # Trivy sobre la imagen que se despliega (paquetes de Alpine) y npm audit de las dependencias
+  # que van al navegador. Aparte de build-test para que un aviso nuevo no tumbe una compilación
+  # que no cambió; también corre cada lunes. Fallan solo por HIGH/CRITICAL corregibles.
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24
+
+      - name: npm audit (production dependencies)
+        run: cd source/frontend/nodejs/webrelay && npm ci --no-audit --no-fund && cd - && make audit
+
+      - name: Build serving image
+        run: make app-image
+
+      - name: Trivy
+        run: make scan
 
   e2e:
     runs-on: ubuntu-latest
