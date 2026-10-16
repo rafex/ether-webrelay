@@ -4,7 +4,7 @@ import { SignalingClient } from '../application/signaling-client';
 import { WebRtcCallSession } from '../application/webrtc-call';
 import { WebSocketCallSession } from '../application/websocket-call';
 import { type AppConfig, parseAppConfig } from '../domain/app-config';
-import { INVITE_ERRORS, type Invite, parseInvite } from '../domain/invite';
+import { INVITE_ERRORS, type Invite, resolveInvite } from '../domain/invite';
 import type { UserPreferences } from '../domain/preferences';
 import { ReconnectPolicy } from '../domain/reconnect-policy';
 import { relaySettingsFromProfile } from '../domain/relay-settings';
@@ -15,6 +15,7 @@ import { assertBrowserSupport } from '../infrastructure/browser-support';
 import { BrowserMediaDevices } from '../infrastructure/devices/browser-media-devices';
 import { WebSocketSignaling } from '../infrastructure/signaling/websocket-signaling';
 import { LocalPreferences } from '../infrastructure/storage/local-preferences';
+import { SessionInviteMemory } from '../infrastructure/storage/session-invite';
 import { performanceTimeSource } from '../infrastructure/time/performance-time-source';
 import { WebSocketTransport } from '../infrastructure/transport/websocket-transport';
 import { browserPeerConnectionFactory } from '../infrastructure/webrtc/browser-peer-connection';
@@ -68,8 +69,17 @@ export class WebRelayApp {
     byId('rejoin').addEventListener('click', () => location.reload());
     document.addEventListener('keydown', (event) => this.onKey(event));
 
-    const invite = parseInvite(location.pathname, location.search);
+    const inviteMemory = new SessionInviteMemory();
+    const invite = resolveInvite(location.pathname, location.search, (room) =>
+      inviteMemory.recall(room),
+    );
     if (!invite.ok) return this.invalid(INVITE_ERRORS[invite.reason]);
+    // The token is a credential: keep it out of the address bar, the history and
+    // anything the guest shares on screen. A reload re-reads it from this tab's
+    // sessionStorage; if that is unavailable it stays in the URL.
+    if (location.search !== '' && inviteMemory.remember(invite.invite)) {
+      history.replaceState(history.state, '', location.pathname);
+    }
 
     const config = await loadConfig();
     if (!config.ok) return this.invalid(config.message);

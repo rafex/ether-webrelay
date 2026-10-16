@@ -11,7 +11,9 @@ export default defineConfig({
   // ffmpeg.wasm spawns its own module worker; pre-bundling breaks its relative URLs.
   optimizeDeps: { exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util'] },
   worker: { format: 'es' },
-  build: { target: 'es2023', sourcemap: true },
+  // No source maps in the build: they would be served next to the bundle and publish the
+  // whole TypeScript source. Debug with `just dev` (Vite serves them in development).
+  build: { target: 'es2023', sourcemap: false },
   server: { host: 'localhost', port: 5173, strictPort: true },
   test: {
     environment: 'node',
