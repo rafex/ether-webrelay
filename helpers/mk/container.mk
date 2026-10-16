@@ -1,5 +1,5 @@
 # Targets de contenedor (reglas 06 y 08): podman → docker, Containerfile.
-.PHONY: runtime image ci app-image e2e-ci
+.PHONY: runtime image ci app-image scan e2e-ci
 
 CONTAINER_HELPER ?= helpers/shell/container.sh
 CONTAINER_RUNTIME ?=
@@ -15,5 +15,5 @@ CONTAINER_FLAGS = --project-name "$(PROJECT_NAME)" --container-runtime "$(CONTAI
 	--app-image "$(APP_IMAGE)" --app-containerfile "$(APP_CONTAINERFILE)" \
 	--e2e-image "$(E2E_IMAGE)" --e2e-containerfile "$(E2E_CONTAINERFILE)" --module "$(MODULE)"
 
-runtime image ci app-image e2e-ci:
+runtime image ci app-image scan e2e-ci:
 	@bash "$(CONTAINER_HELPER)" --action "$@" $(CONTAINER_FLAGS)
