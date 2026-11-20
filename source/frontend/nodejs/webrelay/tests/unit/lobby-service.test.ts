@@ -234,6 +234,60 @@ describe('LobbyService', () => {
     expect(h.devices.tracks.every((t) => t.stopped)).toBe(true);
   });
 
+  describe('automatic framing', () => {
+    class FakeEffects implements VideoEffectsPort {
+      readonly calls: { effect: string; framing: boolean | undefined }[] = [];
+      stops = 0;
+      async apply(source: MediaTrackLike, effect: { kind: string }, framing?: boolean) {
+        this.calls.push({ effect: effect.kind, framing });
+        return {
+          track: new FakeTrack('video', 'framed') as MediaTrackLike,
+          stop: () => {
+            this.stops++;
+            void source;
+          },
+        };
+      }
+    }
+
+    it('is off by default', async () => {
+      const effects = new FakeEffects();
+      const h = setup({ effects });
+      await h.lobby.start();
+      expect(effects.calls).toEqual([{ effect: 'none', framing: false }]);
+    });
+
+    it('is handed to the effects with the saved preference', async () => {
+      const effects = new FakeEffects();
+      const prefs = new MemoryPreferences();
+      prefs.save({ ...DEFAULT_PREFERENCES, autoFraming: true });
+      const h = setup({ effects, prefs });
+      await h.lobby.start();
+      expect(effects.calls).toEqual([{ effect: 'none', framing: true }]);
+      expect(h.lobby.snapshot.camera?.label).toBe('framed');
+    });
+
+    it('rebuilds the camera when it is switched on and off', async () => {
+      const effects = new FakeEffects();
+      const h = setup({ effects });
+      await h.lobby.start();
+      await h.lobby.updatePreferences({ autoFraming: true });
+      expect(effects.calls.at(-1)).toEqual({ effect: 'none', framing: true });
+      expect(effects.stops).toBe(1); // the previous pipeline was released
+      await h.lobby.updatePreferences({ autoFraming: false });
+      expect(effects.calls.at(-1)).toEqual({ effect: 'none', framing: false });
+      expect(effects.stops).toBe(2);
+    });
+
+    it('does not rebuild the camera for unrelated changes', async () => {
+      const effects = new FakeEffects();
+      const h = setup({ effects });
+      await h.lobby.start();
+      await h.lobby.updatePreferences({ mirror: false });
+      expect(effects.calls).toHaveLength(1);
+    });
+  });
+
   describe('advanced microphone processing', () => {
     class FakeEnhancer implements AudioEnhancerPort {
       status = '';

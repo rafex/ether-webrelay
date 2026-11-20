@@ -63,9 +63,26 @@ describe('frontend container entrypoint', () => {
       WEBRELAY_BRIDGE_URL: 'wss://bridge.example:8443/signal',
       WEBRELAY_RELAY_URL: 'wss://relay.example/ws',
       WEBRELAY_EFFECTS_MODEL_URL: '/models/selfie.tflite',
+      WEBRELAY_FACE_MODEL_URL: '/models/face.tflite',
     });
     expect(r.status).toBe(0);
     expect(r.connectSrc).toBe("'self' wss://bridge.example:8443 wss://relay.example blob:");
+    expect(JSON.parse(r.config ?? '{}')).toMatchObject({ faceModelUrl: '/models/face.tflite' });
+  });
+
+  it('allows the origin of an external face model, once, and the public default when unset', () => {
+    const external = run({
+      WEBRELAY_BRIDGE_URL: 'wss://b.example/s',
+      WEBRELAY_EFFECTS_MODEL_URL: '/models/selfie.tflite',
+      WEBRELAY_FACE_MODEL_URL: 'https://cdn.example/face.tflite',
+    });
+    expect(external.connectSrc).toBe("'self' wss://b.example https://cdn.example blob:");
+    // Only the effects model is self-hosted: the face model falls back to Google's public one.
+    const fallback = run({
+      WEBRELAY_BRIDGE_URL: 'wss://b.example/s',
+      WEBRELAY_EFFECTS_MODEL_URL: '/models/selfie.tflite',
+    });
+    expect(fallback.connectSrc).toBe("'self' wss://b.example https://storage.googleapis.com blob:");
   });
 
   it('ships the rest of the policy unchanged', () => {

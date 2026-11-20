@@ -17,10 +17,15 @@ export interface AppConfig {
   readonly defaultView: ViewMode;
   /** Segmentation model for background effects; self-host it by pointing to `/models/…`. */
   readonly effectsModelUrl: string;
+  /** Face detection model for automatic framing; self-host it like the segmentation model. */
+  readonly faceModelUrl: string;
 }
 
 export const DEFAULT_EFFECTS_MODEL_URL =
   'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite';
+
+export const DEFAULT_FACE_MODEL_URL =
+  'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite';
 
 export type AppConfigResult =
   | { readonly ok: true; readonly config: AppConfig }
@@ -61,6 +66,12 @@ export function parseAppConfig(raw: unknown): AppConfigResult {
     issues.push('effectsModelUrl debe ser https:// o una ruta del propio sitio (/models/…)');
   }
 
+  const faceModelUrl =
+    typeof value.faceModelUrl === 'string' ? value.faceModelUrl : DEFAULT_FACE_MODEL_URL;
+  if (!/^(https:\/\/|\/)/.test(faceModelUrl)) {
+    issues.push('faceModelUrl debe ser https:// o una ruta del propio sitio (/models/…)');
+  }
+
   if (issues.length > 0 || !defaultProfile || !isViewMode(defaultView)) {
     return { ok: false, issues };
   }
@@ -73,6 +84,7 @@ export function parseAppConfig(raw: unknown): AppConfigResult {
       defaultProfile,
       defaultView,
       effectsModelUrl,
+      faceModelUrl,
     },
   };
 }

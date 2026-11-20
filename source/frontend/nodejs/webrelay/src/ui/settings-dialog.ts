@@ -85,6 +85,7 @@ export class SettingsDialog {
     this.onToggle('set-leveler', (checked) => ({
       audio: { ...this.prefs.audio, leveler: checked },
     }));
+    this.onToggle('set-framing', (checked) => ({ autoFraming: checked }));
 
     this.dialog.addEventListener('click', (event) => {
       const choice = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-effect]');
@@ -185,6 +186,8 @@ export class SettingsDialog {
     this.renderBackgrounds();
     this.markEffect(prefs.effect);
     byId('effects-status').textContent = this.ctx.effectsStatus();
+    byId('framing-status').textContent = this.ctx.effectsStatus();
+    byId<HTMLInputElement>('set-framing').checked = prefs.autoFraming;
 
     const name = byId<HTMLInputElement>('set-name');
     const title = byId<HTMLInputElement>('set-title');

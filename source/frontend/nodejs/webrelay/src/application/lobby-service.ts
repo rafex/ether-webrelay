@@ -39,7 +39,12 @@ export interface LobbyServiceDeps {
   readonly audioEnhancer?: AudioEnhancerPort;
 }
 
-const CAMERA_KEYS: readonly (keyof UserPreferences)[] = ['cameraId', 'resolution', 'effect'];
+const CAMERA_KEYS: readonly (keyof UserPreferences)[] = [
+  'cameraId',
+  'resolution',
+  'effect',
+  'autoFraming',
+];
 const MICROPHONE_KEYS: readonly (keyof UserPreferences)[] = ['microphoneId', 'audio'];
 
 /**
@@ -191,7 +196,7 @@ export class LobbyService implements LocalMediaProvider {
       cameraConstraints(this.prefs.resolution, this.deps.profile, this.prefs.cameraId),
     );
     try {
-      const processed = await this.effects.apply(raw, this.prefs.effect);
+      const processed = await this.effects.apply(raw, this.prefs.effect, this.prefs.autoFraming);
       return {
         track: processed.track,
         stop: () => {

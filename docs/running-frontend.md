@@ -148,6 +148,7 @@ variables (sin `WEBRELAY_BRIDGE_URL` se usa el `config.json` empaquetado):
 | `WEBRELAY_TRANSPORT` | `transport` | `webrtc` |
 | `WEBRELAY_DEFAULT_VIEW` | `defaultView` | `stage` |
 | `WEBRELAY_EFFECTS_MODEL_URL` | `effectsModelUrl` | modelo oficial de MediaPipe |
+| `WEBRELAY_FACE_MODEL_URL` | `faceModelUrl` | modelo oficial de detección de caras de MediaPipe (encuadre automático) |
 
 ### Qué sirve el contenedor
 
@@ -187,7 +188,7 @@ query), así que tampoco llega a `kubectl logs`. El build **no genera source
 maps** (se publicarían junto al bundle con todo el código fuente) y nginx
 responde 404 a cualquier `*.map`.
 
-El modelo de segmentación de los efectos (MediaPipe, 250 KB) **viene dentro de la imagen** y se
+Los modelos de MediaPipe —segmentación de los efectos (250 KB) y detección de caras del encuadre automático (230 KB)— **vienen dentro de la imagen** y se
 sirve desde `/models/selfie_segmenter.tflite`: la CSP generada al arrancar no incluye ningún
 origen de terceros y la página no le cuenta a Google quién entra. El `Containerfile` lo descarga al
 construir y comprueba su SHA-256 (`EFFECTS_MODEL_SHA256`): la URL pública «latest» es mutable, y si

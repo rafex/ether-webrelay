@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_EFFECTS_MODEL_URL, parseAppConfig } from '../../src/domain/app-config';
+import {
+  DEFAULT_EFFECTS_MODEL_URL,
+  DEFAULT_FACE_MODEL_URL,
+  parseAppConfig,
+} from '../../src/domain/app-config';
 import { parseInvite } from '../../src/domain/invite';
 import { gridLayout, spotlightLayout } from '../../src/domain/layout';
 import {
@@ -57,6 +61,7 @@ describe('parseAppConfig', () => {
         defaultProfile: DEFAULT_PROFILE,
         defaultView: 'stage',
         effectsModelUrl: DEFAULT_EFFECTS_MODEL_URL,
+        faceModelUrl: DEFAULT_FACE_MODEL_URL,
       },
     });
   });
@@ -211,6 +216,9 @@ describe('preferences and identity', () => {
         kind: 'none',
       },
     );
+    expect(sanitizePreferences({}).autoFraming).toBe(false);
+    expect(sanitizePreferences({ autoFraming: true }).autoFraming).toBe(true);
+    expect(sanitizePreferences({ autoFraming: 'yes' }).autoFraming).toBe(false);
     expect(sanitizePreferences({ effect: { kind: 'blur', strength: 'strong' } }).effect).toEqual({
       kind: 'blur',
       strength: 'strong',
