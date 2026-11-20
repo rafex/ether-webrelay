@@ -284,7 +284,7 @@ export class LobbyService implements LocalMediaProvider {
       this.camera = await this.openCamera();
       this.cameraError = undefined;
     } catch (error) {
-      this.cameraError = describe(error);
+      this.cameraError = describeError(error);
     }
     this.emit();
   }
@@ -295,7 +295,7 @@ export class LobbyService implements LocalMediaProvider {
       this.microphone = await this.openMicrophone();
       this.microphoneError = undefined;
     } catch (error) {
-      this.microphoneError = describe(error);
+      this.microphoneError = describeError(error);
     }
     this.emit();
   }
@@ -332,7 +332,7 @@ export class LobbyService implements LocalMediaProvider {
   }
 }
 
-function describe(error: unknown): string {
+function describeError(error: unknown): string {
   return error instanceof RelayError
     ? error.message
     : `No se pudo abrir el dispositivo: ${String(error)}`;
