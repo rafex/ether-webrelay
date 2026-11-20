@@ -52,6 +52,8 @@ export interface CallSnapshot {
   readonly remote: ReadonlyMap<string, ParticipantMedia>;
   readonly stats: CallStats | undefined;
   readonly profile: QualityProfile;
+  /** The host turned live captions on for the room. */
+  readonly captions: boolean;
   readonly error?: RelayError;
 }
 
@@ -67,6 +69,8 @@ export interface CallController {
   /** Swaps the camera (device change, new effect, new resolution). Takes ownership. */
   replaceCamera(handle: LocalTrackHandle): Promise<void>;
   replaceMicrophone(handle: LocalTrackHandle): Promise<void>;
+  /** Sends the line being said (live captions); '' clears it. No-op where the transport has no captions. */
+  sendCaption(text: string): void;
   leave(): Promise<void>;
   subscribe(listener: (snapshot: CallSnapshot) => void): () => void;
 }

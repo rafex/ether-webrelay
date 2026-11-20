@@ -412,4 +412,37 @@ describe('WebRtcCallSession — resilience', () => {
     expect(h.clock.pendingTasks).toBe(0);
     await h.call.leave();
   });
+
+  describe('live captions', () => {
+    it('follows the host: off by default, on from the welcome, and live changes', async () => {
+      const h = await joined();
+      expect(h.call.snapshot.captions).toBe(false);
+      await h.receive({ type: 'captions', enabled: true });
+      expect(h.call.snapshot.captions).toBe(true);
+      await h.receive({ type: 'captions', enabled: false });
+      expect(h.call.snapshot.captions).toBe(false);
+
+      const again = await setup();
+      const admitted = again.call.join();
+      await again.receive({ ...WELCOME, captions: true } as ServerMessage);
+      await admitted;
+      expect(again.call.snapshot.captions).toBe(true);
+    });
+
+    it('sends the line being said, only once it has a seat', async () => {
+      const h = await setup();
+      const admitted = h.call.join();
+      h.call.sendCaption('demasiado pronto');
+      expect(h.conn().ofType('caption')).toEqual([]);
+      await h.receive(WELCOME);
+      await admitted;
+
+      h.call.sendCaption('hola a todos');
+      h.call.sendCaption('');
+      expect(h.conn().ofType('caption')).toEqual([
+        { type: 'caption', text: 'hola a todos' },
+        { type: 'caption', text: '' },
+      ]);
+    });
+  });
 });

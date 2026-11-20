@@ -81,6 +81,7 @@ sequenceDiagram
 | `subscribe.answer` | `sdp` | Respuesta a cada `subscribe.offer` |
 | `ice` | `pc: "publish" \| "subscribe"`, `candidate: {candidate, sdpMid, sdpMLineIndex}` | Trickle ICE |
 | `self.update` | `muted`, `cameraOff`, `screenSharing` | Tras entrar y en cada cambio |
+| `caption` | `text` (≤ 240) | Subtítulos en vivo: la frase que el invitado dice ahora (la última sustituye a la anterior; `""` la borra). Solo si el invitado los activó y el anfitrión también (ver [Subtítulos en vivo](#subtitulos-en-vivo)) |
 | `ping` | `t` (ms del cliente) | Heartbeat cada 5 s |
 | `leave` | — | Salida voluntaria |
 
@@ -92,7 +93,8 @@ pantalla (no se puede deducir del tipo de medio).
 | `type` | Campos | Efecto en el cliente |
 |--------|--------|----------------------|
 | `room.info` | `room`, `title`, `host: {name, avatar?}`, `channels: string[]`, `transport?: "webrtc" \| "websocket"` | Pinta el lobby; `channels` es informativo (youtube, twitch, facebook…); `transport` sobrescribe el de `config.json` |
-| `welcome` | `self`, `resumed`, `resumeToken`, `profile?`, `iceServers[]`, `participants[]` | Admite al participante; crea las conexiones (o las conserva si `resumed`); guarda `resumeToken` para reanudar |
+| `welcome` | `self`, `resumed`, `resumeToken`, `profile?`, `iceServers[]`, `participants[]`, `captions?` | Admite al participante; crea las conexiones (o las conserva si `resumed`); guarda `resumeToken` para reanudar |
+| `captions` | `enabled` | El anfitrión activó o desactivó los subtítulos de la sala; con `welcome.captions` es lo que dice cuándo transcribir |
 | `waiting` | — | La sala pide aprobación del anfitrión: el invitado **no tiene sitio** todavía. El cliente muestra «Esperando admisión» y no publica nada |
 | `admitted` | `token` | El anfitrión lo admitió: el cliente repite `join` con `admit: <token>` (de un solo uso y válido solo para ese socket) y sigue el flujo normal |
 | `publish.answer` | `sdp` | Completa la negociación de `publish` |
@@ -144,6 +146,24 @@ envía `join` (sin `resume`, no tiene sesión) y vuelve a esperar. Una reanudaci
 de una sesión ya sentada no pasa por la sala de espera. Una sala `open` (por
 defecto) nunca envía `waiting`, y un puente anterior tampoco: el cliente funciona
 igual con ambos.
+
+## Subtítulos en vivo
+
+Cambio **aditivo**: un cliente o un puente que no lo conozca lo ignora (los mensajes desconocidos se descartan) y la
+llamada funciona igual.
+
+1. El anfitrión activa los subtítulos de la sala en la consola (`captions: true`). El puente lo anuncia: `welcome.captions`
+   al entrar y `{"type":"captions","enabled":bool}` a todos cuando cambia.
+2. El **invitado** decide por sí mismo (*Ajustes → Audio → Subtítulos en vivo*, apagado por defecto). Solo transcribe si
+   él lo eligió, el anfitrión los activó, está conectado y su micrófono está activo y sin silenciar.
+3. Un motor de voz a texto en **su navegador** transcribe su micrófono (el audio no sale de su equipo). El cliente envía
+   `{"type":"caption","text":"…"}` con la frase que se está diciendo; cada línea sustituye a la anterior y `""` la borra
+   (al callar o al silenciarse). Como mucho una cada 150 ms.
+4. El puente limpia el texto (sin caracteres de control ni de dirección, ≤ 240 caracteres), solo atiende a invitados en
+   escena y a una frase cada 100 ms por invitado, y dibuja la última en la emisión («Nombre: texto», dos líneas como
+   mucho) durante 6 s. No guarda ninguna transcripción.
+
+El motor se conecta por el puerto `TranscriberPort` (`src/ports/transcriber.ts`); sin motor, la opción no se ofrece.
 
 ## Reconexión
 

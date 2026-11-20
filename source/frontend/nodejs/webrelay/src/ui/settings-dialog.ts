@@ -28,6 +28,9 @@ export interface SettingsContext {
   uploadBackground(file: File): Promise<void>;
   effectsStatus(): string;
   audioStatus(): string;
+  /** Is there a speech-to-text engine? Without one the captions option is not offered. */
+  captionsAvailable(): boolean;
+  captionsStatus(): string;
 }
 
 const RESOLUTION_LABELS: Record<ResolutionChoice, string> = {
@@ -86,6 +89,7 @@ export class SettingsDialog {
       audio: { ...this.prefs.audio, leveler: checked },
     }));
     this.onToggle('set-framing', (checked) => ({ autoFraming: checked }));
+    this.onToggle('set-captions', (checked) => ({ captions: checked }));
 
     this.dialog.addEventListener('click', (event) => {
       const choice = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-effect]');
@@ -178,6 +182,9 @@ export class SettingsDialog {
     // RNNoise replaces the browser's suppression: showing both as active would be a lie.
     byId<HTMLInputElement>('set-noise').disabled = prefs.audio.rnnoise;
     byId('audio-status').textContent = this.ctx.audioStatus();
+    byId('captions-field').hidden = !this.ctx.captionsAvailable();
+    byId<HTMLInputElement>('set-captions').checked = prefs.captions;
+    byId('captions-status').textContent = this.ctx.captionsStatus();
 
     const preview = byId<HTMLVideoElement>('settings-preview');
     attachTrack(preview, this.dialog.open ? this.ctx.cameraTrack() : undefined);

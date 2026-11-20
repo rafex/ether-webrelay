@@ -55,6 +55,32 @@ describe('parseServerMessage', () => {
     }
   });
 
+  it('parses the live-captions messages', () => {
+    expect(parse({ type: 'captions', enabled: true })).toEqual({ type: 'captions', enabled: true });
+    expect(parse({ type: 'captions', enabled: false })).toEqual({
+      type: 'captions',
+      enabled: false,
+    });
+    // Anything but an explicit true is off.
+    expect(parse({ type: 'captions' })).toEqual({ type: 'captions', enabled: false });
+    expect(parse({ type: 'captions', enabled: 'yes' })).toEqual({
+      type: 'captions',
+      enabled: false,
+    });
+
+    const welcome = { type: 'welcome', self: 'p-1', iceServers: [], participants: [] };
+    expect(parse({ ...welcome, captions: true })).toMatchObject({ captions: true });
+    expect(parse(welcome)).not.toHaveProperty('captions');
+    expect(parse({ ...welcome, captions: 'si' })).not.toHaveProperty('captions');
+  });
+
+  it('serialises the caption a guest sends', () => {
+    expect(JSON.parse(serializeClientMessage({ type: 'caption', text: 'hola a todos' }))).toEqual({
+      type: 'caption',
+      text: 'hola a todos',
+    });
+  });
+
   it('keeps the resume token of a welcome and ignores an unusable one', () => {
     const base = {
       type: 'welcome',

@@ -1,4 +1,5 @@
 import type { CallController, LocalTrackHandle } from '../application/call-controller';
+import { CaptionService } from '../application/caption-service';
 import { LobbyService } from '../application/lobby-service';
 import { SignalingClient } from '../application/signaling-client';
 import { WebRtcCallSession } from '../application/webrtc-call';
@@ -21,6 +22,7 @@ import { WebSocketTransport } from '../infrastructure/transport/websocket-transp
 import { browserPeerConnectionFactory } from '../infrastructure/webrtc/browser-peer-connection';
 import { type AudioEnhancerPort, passthroughAudio } from '../ports/audio-enhancer';
 import { systemTimer } from '../ports/time';
+import { noTranscriber, type TranscriberPort } from '../ports/transcriber';
 import { passthroughEffects, type VideoEffectsPort } from '../ports/video-effects';
 import { CallView } from './call-view';
 import { byId, isEditable, showScreen, toast } from './dom';
@@ -39,6 +41,8 @@ export interface AppExtensions {
   readonly effectsStatus?: () => string;
   /** Advanced microphone processing (RNNoise, leveler). */
   readonly audioEnhancer?: AudioEnhancerPort;
+  /** Speech-to-text of the guest's own voice for live captions; without it the option is not offered. */
+  readonly transcriber?: TranscriberPort;
   /** Local recording of the call; the returned toggle resolves to "recording now". */
   readonly recorder?: (
     call: CallController,
@@ -60,6 +64,7 @@ export class WebRelayApp {
   private lobbyView: LobbyView | undefined;
   private call: CallController | undefined;
   private callView: CallView | undefined;
+  private captions: CaptionService | undefined;
   private settings: SettingsDialog | undefined;
   private extensions: AppExtensions = {};
 
@@ -147,6 +152,11 @@ export class WebRelayApp {
         ? this.webrtcCall(client, lobby, identity, initial)
         : this.websocketCall(client, lobby, invite, identity, initial);
     this.call = call;
+    this.captions = new CaptionService({
+      call,
+      transcriber: this.extensions.transcriber ?? noTranscriber,
+      enabled: () => this.requireLobby().preferences.captions,
+    });
 
     const recorder = this.extensions.recorder?.(call, title, identity.name);
     this.callView = new CallView(call, {
@@ -239,6 +249,8 @@ export class WebRelayApp {
   }
 
   private finish(message: string): void {
+    this.captions?.dispose();
+    this.captions = undefined;
     this.callView?.dispose();
     this.callView = undefined;
     this.settings?.close();
@@ -269,6 +281,8 @@ export class WebRelayApp {
       },
       effectsStatus: () => extensions.effectsStatus?.() ?? '',
       audioStatus: () => extensions.audioEnhancer?.status ?? '',
+      captionsAvailable: () => extensions.transcriber?.available ?? false,
+      captionsStatus: () => this.captions?.status || extensions.transcriber?.status || '',
     };
   }
 
@@ -290,6 +304,7 @@ export class WebRelayApp {
       toast((error as Error).message);
     }
     if ('speakerId' in patch) this.callView?.setSpeaker(patch.speakerId);
+    if ('captions' in patch) this.captions?.evaluate();
     this.callView?.refresh();
   }
 
