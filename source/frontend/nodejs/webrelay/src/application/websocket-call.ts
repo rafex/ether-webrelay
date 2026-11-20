@@ -95,6 +95,7 @@ export class WebSocketCallSession implements CallController {
       remote: new Map(),
       stats: this.stats,
       profile: this.deps.profile,
+      captions: false,
       ...(this.error ? { error: this.error } : {}),
     };
   }
@@ -175,6 +176,9 @@ export class WebSocketCallSession implements CallController {
     handle.track.enabled = !this.self.muted;
     await this.put('microphone', handle);
   }
+
+  /** The alternative websocket transport has no captions. */
+  sendCaption(): void {}
 
   async leave(): Promise<void> {
     if (this.state === 'left' || this.state === 'failed') return;

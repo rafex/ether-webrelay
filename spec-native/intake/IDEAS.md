@@ -8,7 +8,8 @@ tablero de entrega hasta que se promueven a una spec y sus tareas derivadas.
 ```toml
 id = "IDEA-0001"
 title = "Subtítulos en vivo con Whisper (tiny) en el navegador"
-state = "triaged"
+state = "promoted"
+promoted_to = "SPEC-0004"
 priority = "p2"
 owner = "rafex"
 created_at = '2026-11-20T04:18:08Z'

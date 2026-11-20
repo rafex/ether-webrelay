@@ -87,6 +87,7 @@ export class WebRtcCallSession implements CallController {
   private stats: CallStats | undefined;
   private statsTimer: TimerHandle | undefined;
   private error: RelayError | undefined;
+  private captions = false;
   private admitted: { resolve: () => void; reject: (error: Error) => void } | undefined;
   /** Signaling messages are handled strictly in arrival order. */
   private inbox: Promise<void> = Promise.resolve();
@@ -121,6 +122,7 @@ export class WebRtcCallSession implements CallController {
       remote: this.remoteMedia(),
       stats: this.stats,
       profile: this.profile,
+      captions: this.captions,
       ...(this.error ? { error: this.error } : {}),
     };
   }
@@ -202,6 +204,12 @@ export class WebRtcCallSession implements CallController {
     await this.attach('microphone', handle);
   }
 
+  sendCaption(text: string): void {
+    // Only while we have a seat; the bridge also drops it unless the host turned captions on.
+    if (this.state !== 'connected') return;
+    this.deps.client.send({ type: 'caption', text });
+  }
+
   async leave(): Promise<void> {
     if (this.state === 'left' || this.state === 'failed') return;
     this.deps.client.send({ type: 'leave' });
@@ -260,6 +268,10 @@ export class WebRtcCallSession implements CallController {
         case 'ice':
           await this.addIce(message.pc, message.candidate);
           break;
+        case 'captions':
+          this.captions = message.enabled;
+          this.emit();
+          break;
         case 'profile':
           this.profile = message.profile;
           await this.applyEncodings();
@@ -291,6 +303,7 @@ export class WebRtcCallSession implements CallController {
     this.resumeToken = message.resumeToken;
     this.profile = message.profile ?? this.deps.defaultProfile;
     this.iceServers = message.iceServers;
+    this.captions = message.captions === true;
     if (!message.resumed || !this.publishPc) await this.setupPeers();
     this.setState('connected');
     this.startStats();

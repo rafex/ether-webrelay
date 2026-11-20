@@ -90,6 +90,8 @@ export type ClientMessage =
   | { readonly type: 'subscribe.answer'; readonly sdp: string }
   | { readonly type: 'ice'; readonly pc: PeerRole; readonly candidate: IceCandidateData }
   | ({ readonly type: 'self.update' } & SelfState)
+  /** The line being said right now (live captions); the latest replaces the previous, '' clears it. */
+  | { readonly type: 'caption'; readonly text: string }
   | { readonly type: 'ping'; readonly t: number }
   | { readonly type: 'leave' };
 
@@ -112,7 +114,11 @@ export type ServerMessage =
       readonly profile?: QualityProfile;
       readonly iceServers: readonly IceServerConfig[];
       readonly participants: readonly ParticipantInfo[];
+      /** The host turned live captions on (can change later: `captions`). */
+      readonly captions?: boolean;
     }
+  /** The host turned live captions on or off. */
+  | { readonly type: 'captions'; readonly enabled: boolean }
   /** The room needs the host's approval: the guest has no seat yet. */
   | { readonly type: 'waiting' }
   /** The host let the guest in: send `join` again with this one-time token. */
@@ -157,8 +163,11 @@ export function parseServerMessage(text: string): ServerMessage {
         ...(profile ? { profile } : {}),
         iceServers: requireArray(msg, 'iceServers', parseIceServer, true),
         participants: requireArray(msg, 'participants', parseParticipant, true),
+        ...(msg.captions === true ? { captions: true } : {}),
       };
     }
+    case 'captions':
+      return { type: 'captions', enabled: msg.enabled === true };
     case 'publish.answer':
     case 'subscribe.offer':
       return { type: msg.type, sdp: requireString(msg, 'sdp') };

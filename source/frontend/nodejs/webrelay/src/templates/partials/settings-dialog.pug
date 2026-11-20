@@ -51,6 +51,9 @@ dialog#settings.settings(aria-labelledby="settings-heading")
         +switch('set-rnnoise', 'Supresión de ruido avanzada', 'Red neuronal (RNNoise) que quita teclado, ventilador y calle. Sustituye a la supresión del navegador y usa algo más de procesador.')
         +switch('set-leveler', 'Nivelador de voz', 'Iguala los momentos fuertes y suaves y evita que los picos saturen.')
         p#audio-status.hint(role="status")
+        #captions-field(hidden)
+          +switch('set-captions', 'Subtítulos en vivo', 'Transcribe tu voz en este navegador (el audio no sale de tu equipo) y muestra tu última frase en la emisión cuando el anfitrión activa los subtítulos.')
+          p#captions-status.hint(role="status")
 
       section#section-background.settings-section(data-section-panel="background" hidden)
         p.hint Reemplaza o desenfoca lo que hay detrás de ti.

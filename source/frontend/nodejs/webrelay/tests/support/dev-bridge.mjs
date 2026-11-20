@@ -102,6 +102,8 @@ export async function startDevBridge({ port = 8090, host = '127.0.0.1', log = ()
         if (pc && message.candidate?.candidate) await pc.addIceCandidate(message.candidate);
         return;
       }
+      case 'caption':
+        return; // live captions: accepted and ignored, the dev bridge draws no broadcast
       case 'self.update': {
         const participant = session.participant;
         if (!participant) return;
@@ -189,6 +191,7 @@ export async function startDevBridge({ port = 8090, host = '127.0.0.1', log = ()
         profile: PROFILE,
         iceServers: [],
         participants: [...room.participants.values()].map((p) => p.info),
+        captions: false,
       });
       return;
     }
@@ -225,6 +228,7 @@ export async function startDevBridge({ port = 8090, host = '127.0.0.1', log = ()
       profile: PROFILE,
       iceServers: [],
       participants: [...room.participants.values()].map((p) => p.info),
+      captions: false,
     });
     broadcast(room, participant, { type: 'participant.joined', participant: participant.info });
 

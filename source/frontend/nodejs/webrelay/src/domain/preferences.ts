@@ -38,6 +38,8 @@ export interface UserPreferences {
   readonly effect: VideoEffect;
   /** Crop and zoom the camera to keep the face centered (see domain/framing.ts). */
   readonly autoFraming: boolean;
+  /** Transcribe my microphone in this browser and show it as live captions when the host allows. */
+  readonly captions: boolean;
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
@@ -50,6 +52,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   audio: DEFAULT_AUDIO_PROCESSING,
   effect: NO_EFFECT,
   autoFraming: false,
+  captions: false,
 };
 
 export const MAX_NAME_LENGTH = 60;
@@ -89,6 +92,7 @@ export function sanitizePreferences(raw: unknown): UserPreferences {
     ...(isViewMode(v.view) ? { view: v.view } : {}),
     effect: sanitizeEffect(v.effect),
     autoFraming: bool(v.autoFraming, false),
+    captions: bool(v.captions, false),
   };
 }
 
