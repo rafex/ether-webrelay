@@ -4,7 +4,7 @@ import { WebRelayApp } from './ui/app';
 import { recordingToggle } from './ui/call-recorder';
 
 void new WebRelayApp((config) => {
-  const effects = new MediaPipeEffects(config.effectsModelUrl);
+  const effects = new MediaPipeEffects(config.effectsModelUrl, config.faceModelUrl);
   return {
     effects,
     audioEnhancer: new WebAudioEnhancer(),

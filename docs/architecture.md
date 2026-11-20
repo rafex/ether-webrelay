@@ -166,5 +166,5 @@ Se elige con `transport` en `config.json` o en `room.info`.
 
 `/config.json` (o variables `WEBRELAY_*` en el contenedor) define
 `bridgeUrl`, `relayUrl`, `transport`, `defaultProfile`, `defaultView` y
-`effectsModelUrl`. Ninguna credencial ni destino RTMPS forma parte de la
+`effectsModelUrl` y `faceModelUrl`. Ninguna credencial ni destino RTMPS forma parte de la
 configuración del cliente.

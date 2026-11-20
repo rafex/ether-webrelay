@@ -7,9 +7,12 @@ export interface ProcessedTrack {
   stop(): void;
 }
 
-/** Driven port: camera effects (background blur/replacement) applied before publishing. */
+/**
+ * Driven port: camera effects applied before publishing: background blur/replacement and, with
+ * `framing`, automatic framing (crop and zoom that keep the face centered).
+ */
 export interface VideoEffectsPort {
-  apply(source: MediaTrackLike, effect: VideoEffect): Promise<ProcessedTrack>;
+  apply(source: MediaTrackLike, effect: VideoEffect, framing?: boolean): Promise<ProcessedTrack>;
 }
 
 /** No processing: the camera track is published as captured. */

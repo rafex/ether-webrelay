@@ -53,6 +53,15 @@ sustituye el fondo y `canvas.captureStream()` entrega la pista procesada. Si el
 efecto falla se envía la cámara sin tocar: la llamada nunca pierde video por un
 efecto.
 
+El **encuadre automático** (opcional, *Ajustes → Video → Efectos*) usa el detector de caras de
+MediaPipe, que comparte el runtime WebAssembly de los efectos: unas 8 veces por segundo busca la
+cara más grande y mueve un recorte con la misma proporción del cuadro (nunca deforma) hacia ella,
+con suavizado y una zona muerta para que no tiemble. Si pierde la cara mantiene el encuadre 2,5 s y
+vuelve poco a poco al cuadro completo. El zoom máximo es 1,8× (más se ve borroso al ampliar un
+vídeo de 720p). Se puede combinar con el desenfoque o el fondo virtual: el recorte se aplica antes.
+La geometría vive en `domain/framing.ts` (pura y probada); el dibujado, en
+`infrastructure/effects/mediapipe-effects.ts`.
+
 El **audio avanzado** (opcional, en *Ajustes → Efectos*) hace lo mismo con el micrófono:
 la pista pasa por un `AudioContext` a 48 kHz con dos etapas que se activan por separado
 (`infrastructure/audio/web-audio-enhancer.ts`):

@@ -29,6 +29,13 @@ RUN mkdir -p dist/models \
 	&& wget -q -O dist/models/selfie_segmenter.tflite "$EFFECTS_MODEL_URL" \
 	&& echo "$EFFECTS_MODEL_SHA256  dist/models/selfie_segmenter.tflite" | sha256sum -c -
 
+# Modelo de detección de caras del encuadre automático (MediaPipe BlazeFace, Apache-2.0, ~230 KB):
+# mismo trato que el de segmentación (en la imagen, hash fijo, sin tercero en la CSP).
+ARG FACE_MODEL_URL=https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite
+ARG FACE_MODEL_SHA256=b4578f35940bf5a1a655214a1cce5cab13eba73c1297cd78e1a04c2380b0152f
+RUN wget -q -O dist/models/blaze_face_short_range.tflite "$FACE_MODEL_URL" \
+	&& echo "$FACE_MODEL_SHA256  dist/models/blaze_face_short_range.tflite" | sha256sum -c -
+
 FROM docker.io/nginxinc/nginx-unprivileged:1.29-alpine@sha256:0c79d56aee561a1d81c63f00eee5fb5fe29279560cdc55e91425133104c7fbe6
 # La base de nginx se publica de vez en cuando: `apk upgrade` trae los parches de Alpine posteriores
 # (util-linux, libxml2, pcre2, tiff…). `make scan` falla si queda algo corregible. Luego, sin privilegios.
@@ -43,5 +50,6 @@ COPY --from=build --chown=101:0 /app/dist /usr/share/nginx/html
 # El modelo de efectos viene en la imagen (/models/…): la CSP generada al arrancar no incluye ningún
 # origen de terceros. Sin esta variable el cliente usaría la URL pública de Google.
 ENV WEBRELAY_EFFECTS_MODEL_URL=/models/selfie_segmenter.tflite
+ENV WEBRELAY_FACE_MODEL_URL=/models/blaze_face_short_range.tflite
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s CMD wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1

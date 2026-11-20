@@ -55,14 +55,26 @@ bridge_origin=$(origin_of "$WEBRELAY_BRIDGE_URL" WEBRELAY_BRIDGE_URL)
 relay_origin=$(origin_of "${WEBRELAY_RELAY_URL:-$WEBRELAY_BRIDGE_URL}" WEBRELAY_RELAY_URL)
 connect="'self' $bridge_origin"
 [ "$relay_origin" != "$bridge_origin" ] && connect="$connect $relay_origin"
-if [ -n "${WEBRELAY_EFFECTS_MODEL_URL:-}" ]; then
-	case "$WEBRELAY_EFFECTS_MODEL_URL" in
-	/*) ;; # served by this site: 'self'
-	*) connect="$connect $(origin_of "$WEBRELAY_EFFECTS_MODEL_URL" WEBRELAY_EFFECTS_MODEL_URL)" ;;
+# The models are fetched by the page: a path of this site needs nothing ('self'); an external URL
+# needs its origin; unset means the public default model, which lives at $default_model.
+add_origin() {
+	case " $connect " in
+	*" $1 "*) ;; # already allowed
+	*) connect="$connect $1" ;;
 	esac
-else
-	connect="$connect $default_model" # the default segmentation model
-fi
+}
+add_model_origin() {
+	if [ -n "$2" ]; then
+		case "$2" in
+		/*) ;; # served by this site: 'self'
+		*) add_origin "$(origin_of "$2" "$1")" ;;
+		esac
+	else
+		add_origin "$default_model"
+	fi
+}
+add_model_origin WEBRELAY_EFFECTS_MODEL_URL "${WEBRELAY_EFFECTS_MODEL_URL:-}"
+add_model_origin WEBRELAY_FACE_MODEL_URL "${WEBRELAY_FACE_MODEL_URL:-}"
 write_csp "$connect blob:"
 
 {
@@ -72,6 +84,9 @@ write_csp "$connect blob:"
 	printf '  "transport": "%s",\n' "$(json_escape "${WEBRELAY_TRANSPORT:-webrtc}")"
 	if [ -n "${WEBRELAY_EFFECTS_MODEL_URL:-}" ]; then
 		printf '  "effectsModelUrl": "%s",\n' "$(json_escape "$WEBRELAY_EFFECTS_MODEL_URL")"
+	fi
+	if [ -n "${WEBRELAY_FACE_MODEL_URL:-}" ]; then
+		printf '  "faceModelUrl": "%s",\n' "$(json_escape "$WEBRELAY_FACE_MODEL_URL")"
 	fi
 	printf '  "defaultView": "%s"\n' "$(json_escape "${WEBRELAY_DEFAULT_VIEW:-stage}")"
 	printf '}\n'

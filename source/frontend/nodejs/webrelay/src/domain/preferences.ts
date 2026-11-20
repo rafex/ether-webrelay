@@ -36,6 +36,8 @@ export interface UserPreferences {
   readonly audio: AudioProcessing;
   readonly view?: ViewMode;
   readonly effect: VideoEffect;
+  /** Crop and zoom the camera to keep the face centered (see domain/framing.ts). */
+  readonly autoFraming: boolean;
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
@@ -47,6 +49,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   mirror: true,
   audio: DEFAULT_AUDIO_PROCESSING,
   effect: NO_EFFECT,
+  autoFraming: false,
 };
 
 export const MAX_NAME_LENGTH = 60;
@@ -85,6 +88,7 @@ export function sanitizePreferences(raw: unknown): UserPreferences {
     },
     ...(isViewMode(v.view) ? { view: v.view } : {}),
     effect: sanitizeEffect(v.effect),
+    autoFraming: bool(v.autoFraming, false),
   };
 }
 

@@ -33,6 +33,8 @@ dialog#settings.settings(aria-labelledby="settings-heading")
             button.choice(type="button" data-effect="none") Sin efecto
             button.choice(type="button" data-effect="blur-light") Desenfoque leve
             button.choice(type="button" data-effect="blur-strong") Desenfoque fuerte
+          +switch('set-framing', 'Encuadre automático', 'Mantiene tu cara centrada y a buen tamaño con un zoom suave. Usa algo más de procesador.')
+          p#framing-status.hint(role="status")
 
       section#section-audio.settings-section(data-section-panel="audio" hidden)
         +select('set-microphone', 'Micrófono')

@@ -21,6 +21,16 @@ describe('self-hosted effects model', () => {
     );
   });
 
+  it('does the same for the face detector of the automatic framing', () => {
+    expect(containerfile).toMatch(/ARG FACE_MODEL_SHA256=[0-9a-f]{64}\b/);
+    expect(containerfile).toMatch(
+      /sha256sum -c -[\s\S]*dist\/models\/blaze_face_short_range\.tflite/,
+    );
+    expect(containerfile).toMatch(
+      /^ENV WEBRELAY_FACE_MODEL_URL=\/models\/blaze_face_short_range\.tflite$/m,
+    );
+  });
+
   it('is served by nginx from /models/ with the security headers', () => {
     const block = /location \/models\/ \{([\s\S]*?)\n {4}\}/.exec(nginx)?.[1] ?? '';
     expect(block).toContain('security-headers.conf');
