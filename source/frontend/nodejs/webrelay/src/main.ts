@@ -1,5 +1,6 @@
 import { WebAudioEnhancer } from './infrastructure/audio/web-audio-enhancer';
 import { MediaPipeEffects } from './infrastructure/effects/mediapipe-effects';
+import { WhisperTranscriber } from './infrastructure/transcription/whisper-transcriber';
 import { WebRelayApp } from './ui/app';
 import { recordingToggle } from './ui/call-recorder';
 
@@ -12,5 +13,6 @@ void new WebRelayApp((config) => {
     uploadBackground: (file) => effects.registerImage(file),
     effectsStatus: () => effects.status,
     recorder: recordingToggle,
+    transcriber: new WhisperTranscriber(config.captionsUrl),
   };
 }).start();

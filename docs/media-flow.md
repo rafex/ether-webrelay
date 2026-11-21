@@ -62,6 +62,29 @@ vídeo de 720p). Se puede combinar con el desenfoque o el fondo virtual: el reco
 La geometría vive en `domain/framing.ts` (pura y probada); el dibujado, en
 `infrastructure/effects/mediapipe-effects.ts`.
 
+Los **subtítulos en vivo** (opcional, *Ajustes → Audio*, y solo si el anfitrión los activó) transcriben la
+voz del propio invitado **en su navegador**; el audio no sale del equipo y al puente solo llega el texto
+(`caption`, ver `docs/signaling.md`). El motor es Whisper tiny cuantizado (~44 MB) sobre ONNX Runtime Web
+(WebAssembly, un hilo) y corre en un Worker para que una transcripción (≈1 s) no congele la interfaz ni
+los efectos de video (`infrastructure/transcription/`). La cadena:
+
+1. Un AudioWorklet (`capture.worklet.ts`) toma el micrófono ya procesado (RNNoise y nivelador, si están
+   activos) y lo entrega en bloques de 100 ms a 16 kHz mono (`domain/resampler.ts`).
+2. `domain/speech-segmenter.ts` detecta cuándo alguien habla (umbral sobre el ruido de fondo medido, no
+   decodifica silencio) y entrega el audio cada 1,2 s mientras habla (la frase crece) y completo al pausar
+   (0,7 s) o a los 12 s.
+3. `decode-queue.ts` manda un solo trabajo a la vez: lo parcial se descarta si el motor va ocupado, lo
+   terminado espera turno.
+4. `domain/transcript.ts` limpia el resultado (descarta anotaciones y las frases que los modelos pequeños
+   inventan con el silencio) y `CaptionService` lo envía al puente.
+
+El modelo viene **dentro de la imagen** (`/captions/whisper-tiny/`, revisión y hash fijados en el
+`Containerfile`) y el runtime WebAssembly va como activo con hash del propio bundle: el navegador no
+contacta a Hugging Face ni a ningún CDN, y la CSP no cambia. Se descarga una vez por navegador, solo cuando
+alguien activa los subtítulos (≈70 MB). Medido en Chromium (un hilo, Apple M-series): unos 1,0 s para
+transcribir 6-9 s de voz, es decir ~9× tiempo real; en equipos más modestos puede ser varias veces más
+lento, por eso es opcional.
+
 El **audio avanzado** (opcional, en *Ajustes → Efectos*) hace lo mismo con el micrófono:
 la pista pasa por un `AudioContext` a 48 kHz con dos etapas que se activan por separado
 (`infrastructure/audio/web-audio-enhancer.ts`):

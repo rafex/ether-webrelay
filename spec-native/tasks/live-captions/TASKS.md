@@ -37,7 +37,7 @@ completion_evidence = ["tests/unit/caption-service.test.ts: 18 casos; 263 tests 
 ```toml
 id             = "TASK-0303"
 title          = "Spike y adaptador de Whisper (WASM) en el navegador"
-state          = "todo"
+state = "in_progress"
 priority       = "p2"
 owner          = "rafex"
 labels         = ["captions", "wasm", "spike"]

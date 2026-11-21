@@ -19,6 +19,11 @@ export interface AppConfig {
   readonly effectsModelUrl: string;
   /** Face detection model for automatic framing; self-host it like the segmentation model. */
   readonly faceModelUrl: string;
+  /**
+   * Folder with the speech engine for live captions (`whisper-tiny/` and `ort/` inside), served by
+   * this site. Empty: this deployment has no captions engine and the option is not offered.
+   */
+  readonly captionsUrl: string;
 }
 
 export const DEFAULT_EFFECTS_MODEL_URL =
@@ -72,6 +77,11 @@ export function parseAppConfig(raw: unknown): AppConfigResult {
     issues.push('faceModelUrl debe ser https:// o una ruta del propio sitio (/models/…)');
   }
 
+  const captionsUrl = typeof value.captionsUrl === 'string' ? value.captionsUrl : '';
+  if (captionsUrl !== '' && !/^(https:\/\/|\/)/.test(captionsUrl)) {
+    issues.push('captionsUrl debe ser https:// o una ruta del propio sitio (/captions/)');
+  }
+
   if (issues.length > 0 || !defaultProfile || !isViewMode(defaultView)) {
     return { ok: false, issues };
   }
@@ -85,6 +95,7 @@ export function parseAppConfig(raw: unknown): AppConfigResult {
       defaultView,
       effectsModelUrl,
       faceModelUrl,
+      captionsUrl,
     },
   };
 }

@@ -75,6 +75,11 @@ add_model_origin() {
 }
 add_model_origin WEBRELAY_EFFECTS_MODEL_URL "${WEBRELAY_EFFECTS_MODEL_URL:-}"
 add_model_origin WEBRELAY_FACE_MODEL_URL "${WEBRELAY_FACE_MODEL_URL:-}"
+# The captions engine (model and WebAssembly runtime) is optional: without a value no origin is
+# added (and the page does not offer captions). A path of this site needs nothing.
+if [ -n "${WEBRELAY_CAPTIONS_URL:-}" ]; then
+	add_model_origin WEBRELAY_CAPTIONS_URL "$WEBRELAY_CAPTIONS_URL"
+fi
 write_csp "$connect blob:"
 
 {
@@ -87,6 +92,9 @@ write_csp "$connect blob:"
 	fi
 	if [ -n "${WEBRELAY_FACE_MODEL_URL:-}" ]; then
 		printf '  "faceModelUrl": "%s",\n' "$(json_escape "$WEBRELAY_FACE_MODEL_URL")"
+	fi
+	if [ -n "${WEBRELAY_CAPTIONS_URL:-}" ]; then
+		printf '  "captionsUrl": "%s",\n' "$(json_escape "$WEBRELAY_CAPTIONS_URL")"
 	fi
 	printf '  "defaultView": "%s"\n' "$(json_escape "${WEBRELAY_DEFAULT_VIEW:-stage}")"
 	printf '}\n'

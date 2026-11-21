@@ -85,6 +85,28 @@ describe('frontend container entrypoint', () => {
     expect(fallback.connectSrc).toBe("'self' wss://b.example https://storage.googleapis.com blob:");
   });
 
+  it('serves the captions engine from the site: no new origin, and it reaches config.json', () => {
+    const r = run({
+      WEBRELAY_BRIDGE_URL: 'wss://b.example/s',
+      WEBRELAY_EFFECTS_MODEL_URL: '/models/selfie.tflite',
+      WEBRELAY_FACE_MODEL_URL: '/models/face.tflite',
+      WEBRELAY_CAPTIONS_URL: '/captions/',
+    });
+    expect(r.status).toBe(0);
+    expect(r.connectSrc).toBe("'self' wss://b.example blob:");
+    expect(JSON.parse(r.config ?? '{}')).toMatchObject({ captionsUrl: '/captions/' });
+  });
+
+  it('does not mention captions, nor open an origin for them, when no engine is configured', () => {
+    const r = run({
+      WEBRELAY_BRIDGE_URL: 'wss://b.example/s',
+      WEBRELAY_EFFECTS_MODEL_URL: '/models/selfie.tflite',
+      WEBRELAY_FACE_MODEL_URL: '/models/face.tflite',
+    });
+    expect(r.connectSrc).toBe("'self' wss://b.example blob:");
+    expect(JSON.parse(r.config ?? '{}')).not.toHaveProperty('captionsUrl');
+  });
+
   it('ships the rest of the policy unchanged', () => {
     const { policy } = run({ WEBRELAY_BRIDGE_URL: 'wss://b.example/s' });
     for (const directive of [
