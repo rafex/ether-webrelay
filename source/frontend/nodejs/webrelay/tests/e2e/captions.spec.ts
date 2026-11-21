@@ -101,6 +101,11 @@ test('a guest who speaks gets captions from the in-browser engine', async ({ pag
   await page.locator('#join-button').click();
   await expect(page.locator('#call-badge')).toHaveText('En la sala');
 
+  // The guest is told the model is loading and when captions are on.
+  await expect(page.locator('#toasts')).toContainText('Subtítulos en vivo activados.', {
+    timeout: 120_000,
+  });
+
   const lines = async (): Promise<string[]> =>
     (await (
       await request.get(`http://127.0.0.1:${BRIDGE_PORT}/__test/captions?room=${ROOM}`)

@@ -65,6 +65,7 @@ export class WebRelayApp {
   private call: CallController | undefined;
   private callView: CallView | undefined;
   private captions: CaptionService | undefined;
+  private captionsWatch: ReturnType<typeof setInterval> | undefined;
   private settings: SettingsDialog | undefined;
   private extensions: AppExtensions = {};
 
@@ -157,6 +158,7 @@ export class WebRelayApp {
       transcriber: this.extensions.transcriber ?? noTranscriber,
       enabled: () => this.requireLobby().preferences.captions,
     });
+    this.watchCaptions();
 
     const recorder = this.extensions.recorder?.(call, title, identity.name);
     this.callView = new CallView(call, {
@@ -248,7 +250,28 @@ export class WebRelayApp {
     });
   }
 
+  /**
+   * The speech model is ~70 MB the first time: say so while it loads and when it is ready (or why it
+   * is not), since the settings dialog is usually closed by then.
+   */
+  private watchCaptions(): void {
+    let shown = '';
+    let wasRunning = false;
+    this.captionsWatch = setInterval(() => {
+      const captions = this.captions;
+      if (!captions) return;
+      const text = captions.status || this.extensions.transcriber?.status || '';
+      if (text !== '' && text !== shown) toast(text);
+      if (captions.running && !wasRunning) toast('Subtítulos en vivo activados.');
+      if (text !== shown || captions.running !== wasRunning) this.settings?.refresh();
+      shown = text;
+      wasRunning = captions.running;
+    }, 1000);
+  }
+
   private finish(message: string): void {
+    clearInterval(this.captionsWatch);
+    this.captionsWatch = undefined;
     this.captions?.dispose();
     this.captions = undefined;
     this.callView?.dispose();
