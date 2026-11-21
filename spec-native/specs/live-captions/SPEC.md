@@ -6,7 +6,7 @@ id            = "SPEC-0004"
 state         = "active"
 owner         = "rafex"
 created_at    = "2026-11-20"
-updated_at    = "2026-11-20"
+updated_at    = "2026-11-21"
 replaces      = "none"
 related_tasks       = ["TASK-0301", "TASK-0302", "TASK-0303", "TASK-0304"]
 related_decisions   = ["DEC-0001", "DEC-0010"]
@@ -34,6 +34,8 @@ compositor y exigiría enviar el audio a un servicio de terceros.
 - Lado del puente (`ether-streaming-culerin`): dibujado en el sitio sin recomponer (`drawtext reload=1`), expiración,
   límites y limpieza del texto. Ver su PR de subtítulos.
 - Puerto `TranscriberPort` y `CaptionService` (cuándo escuchar, limitación de ritmo, reintentos con espera).
+- Motor real: Whisper tiny cuantizado en el navegador (ONNX Runtime Web, WebAssembly, Worker), autoalojado en la
+  imagen con hash fijo; segmentación de voz, cola de decodificación y limpieza del texto en módulos puros probados.
 
 ### Excluye
 - Guardar o exponer transcripciones.
@@ -56,5 +58,11 @@ compositor y exigiría enviar el audio a un servicio de terceros.
 
 ## Riesgos
 
-- CPU del cliente con un motor WASM de un solo hilo (sin COEP): medir antes de comprometerse (spike).
-- Calidad del reconocimiento por idioma y modelo (Whisper tiny ≈ 40 MB).
+- CPU del cliente con un motor WASM de un solo hilo (sin COEP): medido en un Mac M-series (≈1 s por 6-9 s de voz);
+  falta medirlo en un equipo de gama media y con los efectos de video activos.
+- Calidad del reconocimiento por idioma y modelo (Whisper tiny ≈ 44 MB, ≈70 MB con el runtime): el español de voz
+  sintética sale casi exacto; falta voz humana real, con ruido y con acento.
+- Primera carga: ≈70 MB por navegador; el aviso «Cargando el modelo de voz» sale en los ajustes.
+- `transformers.js` baja por defecto su runtime de un CDN público y su caché lo convierte en `blob:`: ambos se
+  desactivan (runtime como activo propio, `env.useWasmCache=false`) y `captions.spec.ts` comprueba que no se
+  contacta a ningún tercero bajo la CSP de producción.

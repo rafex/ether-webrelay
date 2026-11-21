@@ -9,6 +9,7 @@
 // Test hooks: token "invalid" → fatal invalid-token; room "closed" → room-not-found.
 
 import { randomUUID } from 'node:crypto';
+import { createServer } from 'node:http';
 import { pathToFileURL } from 'node:url';
 import { MediaStreamTrack, RTCPeerConnection, RTCRtpCodecParameters } from 'werift';
 import { WebSocketServer } from 'ws';
@@ -40,12 +41,21 @@ export async function startDevBridge({ port = 8090, host = '127.0.0.1', log = ()
   const rooms = new Map();
   let nextId = 1;
 
+  // Test hook: GET /__test/captions?room=<id> lists the caption lines the room received.
+  const http = createServer((request, response) => {
+    const url = new URL(request.url ?? '/', 'http://localhost');
+    if (url.pathname !== '/__test/captions') {
+      response.writeHead(404).end();
+      return;
+    }
+    const lines = rooms.get(url.searchParams.get('room') ?? '')?.captions ?? [];
+    response.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(lines));
+  });
   const server = new WebSocketServer({
-    host,
-    port,
+    server: http,
     handleProtocols: (protocols) => (protocols.has(SUBPROTOCOL) ? SUBPROTOCOL : false),
   });
-  await new Promise((resolve) => server.once('listening', resolve));
+  await new Promise((resolve) => http.listen(port, host, resolve));
 
   server.on('connection', (socket) => {
     const session = { socket, room: undefined, participant: undefined };
@@ -102,8 +112,12 @@ export async function startDevBridge({ port = 8090, host = '127.0.0.1', log = ()
         if (pc && message.candidate?.candidate) await pc.addIceCandidate(message.candidate);
         return;
       }
-      case 'caption':
-        return; // live captions: accepted and ignored, the dev bridge draws no broadcast
+      case 'caption': {
+        // Live captions: the dev bridge draws no broadcast, it only keeps what it received.
+        const room = session.room;
+        if (room?.captions && typeof message.text === 'string') room.captions.push(message.text);
+        return;
+      }
       case 'self.update': {
         const participant = session.participant;
         if (!participant) return;
@@ -138,6 +152,8 @@ export async function startDevBridge({ port = 8090, host = '127.0.0.1', log = ()
           channels: ['youtube', 'twitch'],
         },
         participants: new Map(),
+        // Rooms named captions-* have live captions on; the lines they receive are kept.
+        ...(id.startsWith('captions') ? { captions: [] } : {}),
       };
       rooms.set(id, room);
     }
@@ -191,7 +207,7 @@ export async function startDevBridge({ port = 8090, host = '127.0.0.1', log = ()
         profile: PROFILE,
         iceServers: [],
         participants: [...room.participants.values()].map((p) => p.info),
-        captions: false,
+        captions: Boolean(room.captions),
       });
       return;
     }
@@ -228,7 +244,7 @@ export async function startDevBridge({ port = 8090, host = '127.0.0.1', log = ()
       profile: PROFILE,
       iceServers: [],
       participants: [...room.participants.values()].map((p) => p.info),
-      captions: false,
+      captions: Boolean(room.captions),
     });
     broadcast(room, participant, { type: 'participant.joined', participant: participant.info });
 
@@ -340,12 +356,14 @@ export async function startDevBridge({ port = 8090, host = '127.0.0.1', log = ()
   }
 
   return {
-    url: `ws://${host}:${server.address().port}/signal`,
+    url: `ws://${host}:${http.address().port}/signal`,
     rooms,
     close: async () => {
       for (const room of rooms.values()) for (const p of room.participants.values()) leave(room, p);
       for (const client of server.clients) client.terminate();
       await new Promise((resolve) => server.close(resolve));
+      http.closeAllConnections();
+      await new Promise((resolve) => http.close(resolve));
     },
   };
 }

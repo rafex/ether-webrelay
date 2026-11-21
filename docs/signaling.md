@@ -164,6 +164,8 @@ llamada funciona igual.
    mucho) durante 6 s. No guarda ninguna transcripción.
 
 El motor se conecta por el puerto `TranscriberPort` (`src/ports/transcriber.ts`); sin motor, la opción no se ofrece.
+La implementación incluida es Whisper tiny en el navegador (`docs/media-flow.md`); se ofrece cuando `config.json` trae
+`captionsUrl` (la imagen lo fija a `/captions/`).
 
 ## Reconexión
 

@@ -62,8 +62,17 @@ describe('parseAppConfig', () => {
         defaultView: 'stage',
         effectsModelUrl: DEFAULT_EFFECTS_MODEL_URL,
         faceModelUrl: DEFAULT_FACE_MODEL_URL,
+        captionsUrl: '',
       },
     });
+  });
+
+  it('takes the captions engine folder from this site, or none', () => {
+    const base = { bridgeUrl: 'wss://bridge.example.com/signal' };
+    const ok = parseAppConfig({ ...base, captionsUrl: '/captions/' });
+    expect(ok.ok && ok.config.captionsUrl).toBe('/captions/');
+    const bad = parseAppConfig({ ...base, captionsUrl: 'http://evil.example/' });
+    expect(bad.ok).toBe(false);
   });
 
   it('accepts the websocket transport with its own relay URL', () => {
