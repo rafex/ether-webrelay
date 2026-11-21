@@ -25,7 +25,7 @@ let recognizer: Promise<Recognizer> | undefined;
 let language = '';
 
 const say = (message: FromWorker) => scope.postMessage(message);
-const describe = (error: unknown) => (error instanceof Error ? error.message : String(error));
+const describeError = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 function init(baseUrl: string): Promise<Recognizer> {
   const base = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
@@ -54,7 +54,7 @@ scope.onmessage = (event) => {
     recognizer = init(message.baseUrl);
     recognizer.then(
       () => say({ type: 'ready' }),
-      (error: unknown) => say({ type: 'error', message: describe(error) }),
+      (error: unknown) => say({ type: 'error', message: describeError(error) }),
     );
     return;
   }
@@ -77,6 +77,6 @@ scope.onmessage = (event) => {
         const first = Array.isArray(result) ? result[0] : result;
         say({ type: 'text', id: message.id, text: first?.text ?? '' });
       },
-      (error: unknown) => say({ type: 'error', id: message.id, message: describe(error) }),
+      (error: unknown) => say({ type: 'error', id: message.id, message: describeError(error) }),
     );
 };
