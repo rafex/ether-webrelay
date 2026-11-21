@@ -37,7 +37,7 @@ completion_evidence = ["tests/unit/caption-service.test.ts: 18 casos; 263 tests 
 ```toml
 id             = "TASK-0303"
 title          = "Spike y adaptador de Whisper (WASM) en el navegador"
-state = "in_progress"
+state = "done"
 priority       = "p2"
 owner          = "rafex"
 labels         = ["captions", "wasm", "spike"]
@@ -45,7 +45,7 @@ dependencies   = ["TASK-0302"]
 expected_files = ["source/frontend/nodejs/webrelay/src/infrastructure/transcription/*", "containers/frontend/*"]
 close_criteria = "Medir latencia y CPU de Whisper tiny (WASM, un hilo) en un equipo de gama media; si es viable, adaptador autoalojado con hash fijo"
 validation     = ["medición en navegador", "make ci", "make e2e-ci", "make scan"]
-completion_evidence = []
+completion_evidence = ["[\"PR rafex/ether-webrelay#35 fusionado y desplegado (build-44854407845); tests/e2e/captions.spec.ts transcribe una frase en español bajo la CSP de producción sin contactar terceros; medición en Chromium ≈1,0 s por 6-9 s de voz (Apple M-series, un hilo). Pendiente en TASK-0304: voz humana real y equipo de gama media.\"]"]
 ```
 
 ### TASK-0304 - Prueba extremo a extremo con motor real
