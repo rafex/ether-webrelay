@@ -28,7 +28,7 @@
     "@ffmpeg/ffmpeg": "0.12.15",
     "@ffmpeg/util": "0.12.2",
     "@huggingface/transformers": "4.3.2",
-    "@mediapipe/tasks-vision": "1.2.2",
+    "@mediapipe/tasks-vision": "1.2.3",
     "@sapphi-red/web-noise-suppressor": "0.4.1"
   },
   "devDependencies": {
